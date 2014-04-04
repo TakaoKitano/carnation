@@ -31,16 +31,13 @@ sudo apt-get install git
 #
 sudo apt-get -y install build-essential zlib1g-dev libssl-dev libreadline6-dev libyaml-dev
 cd /usr/local/src
-wget http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.1.tar.gz
-tar -xvzf ruby-2.1.1.tar.gz
-cd ruby-2.1.1/
+wget http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p451.tar.gz
+#wget http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.1.tar.gz
+#tar -xvzf ruby-2.1.1.tar.gz
+#cd ruby-2.1.1/
 ./configure --prefix=/usr/local
 make && make check
 sudo make install
-#
-# setup bundler
-#
-sudo gem install bundler
 
 #
 # install mysql
@@ -58,6 +55,11 @@ lxc-clone -o carnation -n carnation_2014_04_04
 # git clone
 #
 git clone ssh://git@183.181.164.122:3843/home/git/carnation
+
+#
+# setup bundler
+#
+sudo gem install bundler
 
 #
 # install gems
