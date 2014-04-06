@@ -1,0 +1,4 @@
+ID: tkitano
+PW: HCweV!Gp4I)]
+User ARN: arn:aws:iam::172367428754:user/tkitano
+https://172367428754.signin.aws.amazon.com/console

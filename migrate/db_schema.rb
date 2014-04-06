@@ -1,9 +1,9 @@
 require './db_connect'
 
 $DB.drop_table?:items
+$DB.drop_table?:access_tokens
 $DB.drop_table?:stbs
 $DB.drop_table?:clients
-$DB.drop_table?:access_tokens
 $DB.drop_table?:groups_users
 $DB.drop_table?:groups
 $DB.drop_table?:users
@@ -46,7 +46,7 @@ $DB.create_table :stbs do
   String      :phone_number
   String      :postal_code
   String      :address, :text=>true
-  foreign_key :user_id,  :users, :null=>true
+  foreign_key :user_id,  :users, :null=>false
   foreign_key :client_id, :clients, :null=>false
   TimeStamp   :created_at
   TimeStamp   :updated_at
@@ -64,9 +64,10 @@ $DB.create_table :items do
 end
 
 $DB.create_table :access_tokens do
-  String      :token, :primary_key=>true
-  foreign_key :user_id, :users
-  String      :access_list, :text=>true
+  String      :token,       :primary_key=>true
+  foreign_key :user_id,     :users, :null=>true
+  foreign_key :stb_id,      :stbs,  :null=>true
+  String      :scope       
   TimeStamp   :expires_at
   TimeStamp   :created_at
 end

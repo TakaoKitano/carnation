@@ -67,9 +67,19 @@ sudo gem install bundler
 cd carnation
 bundle install --path vendor/bundle
 
+#
+# create database, setup account (you only need to do this once) 
+#
 mysql -u root <migrate/setupdb.sql
+
+#
+# create tables, populate first test data (you need to do every time you modify schema)
+#
 bundle exec ruby migrate/db_init.rb
 
+#
+# have fun
+#
 bundle exec irb 
 require './models'
 
