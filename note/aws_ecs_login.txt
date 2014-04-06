@@ -1,1 +1,0 @@
-ssh -i magoaws.pem ubuntu@54.238.176.142
