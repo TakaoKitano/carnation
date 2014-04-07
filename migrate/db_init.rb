@@ -1,2 +1,3 @@
 require './migrate/db_schema'
-require './migrate/db_populate'
+require './migrate/create_builtin_users.rb'
+require './migrate/create_testdata.rb'

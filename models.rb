@@ -45,6 +45,7 @@ end
 
 class Stb < Sequel::Model(:stbs)
   Stb.plugin :timestamps, :force=>true, :update_on_create=>true
+  many_to_many :items, :left_key=>:stb_id, :right_key=>:item_id, :join_table=>:stb_like_items;
   def self.generate(name, client_id)
     r = Stb.new
     r.name = name
@@ -55,16 +56,38 @@ end
 
 class Item < Sequel::Model(:items)
   Item.plugin :timestamps, :force=>true, :update_on_create=>true
-  def self.generate(user_id, url, type)
+  many_to_many :stbs, :left_key=>:item_id, :right_key=>:stb_id, :join_table=>:stb_like_items;
+  one_to_many :derivatives
+  def self.generate(user_id, extension)
     r = Item.new
     r.user_id = user_id
-    r.url = url
-    url[url.rindex('.') || url.length] = "_thumb."
-    url = url.chop if url.end_with?('.')
-    r.thumbnail_url = url
+    r.extension = extension
     r.status = 0
-    r.type = type
     return r
+  end
+  
+  def set_path
+    self.path = "/" + sprintf("%08d", self.user_id) + "/" + sprintf("%08d", self.id) + self.extension
+    self.save
+  end
+end
+
+
+class Derivative < Sequel::Model(:derivatives)
+  Derivative.plugin :timestamps, :force=>true, :update_on_create=>true
+  def self.generate(item_id, extension, name)
+    r = Derivative.new
+    r.item_id = item_id
+    r.extension = extension
+    r.name = name
+    r.status = 0
+    return r
+  end
+
+  def set_path
+    item = Item.where(:id => self.item_id).first
+    self.path = "/" + sprintf("%08d", item.user_id) + "/" + sprintf("%08d", self.item_id) + "/" + sprintf("%08d", self.id) + self.extension
+    self.save
   end
 end
 
