@@ -28,10 +28,10 @@ class Token < Sinatra::Base
         #
         p "password grant_type token request, id and secret is OK"
         #p "req.username=" + req.username + " req.password=" + req.password
-        user = User.where(:name => req.username).first || req.invalid_grant!
+        user = User.where(:email => req.username).first || req.invalid_grant!
  
         if user.password_hash == Digest::SHA256.hexdigest(user.password_salt + req.password)
-          access_token = AccessToken.generate(user).save
+          access_token = AccessToken.new(user).save
           res.access_token = access_token.generate_bearer_token
         else
           p "user password unmatch"
@@ -39,12 +39,12 @@ class Token < Sinatra::Base
         end
       when :client_credentials 
         p "client_credentials token request, id and secret is OK"
-        stb = client.stb
-        if stb
-          access_token = AccessToken.generate(stb).save
+        viewer = client.viewer
+        if viewer
+          access_token = AccessToken.new(viewer).save
           res.access_token = access_token.generate_bearer_token
         else
-          p "stb not found"
+          p "viewer not found"
           req.invalid_grant!
         end
       else

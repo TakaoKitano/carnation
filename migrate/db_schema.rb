@@ -1,10 +1,11 @@
 require './db_connect'
 
 $DB.drop_table?:derivatives
-$DB.drop_table?:stb_like_items
+$DB.drop_table?:viewer_like_items
+$DB.drop_table?:groups_viewers
 $DB.drop_table?:items
 $DB.drop_table?:access_tokens
-$DB.drop_table?:stbs
+$DB.drop_table?:viewers
 $DB.drop_table?:clients
 $DB.drop_table?:groups_users
 $DB.drop_table?:groups
@@ -13,7 +14,7 @@ $DB.drop_table?:users
 $DB.create_table :users, :engine=>:InnoDB do
   primary_key :id
   String      :name
-  String      :email
+  String      :email, :unique=>true, :null=>false, :index=>true
   String      :password_hash
   String      :password_salt
   Integer     :role    # 0:normal, 1:default, 2:signup, 3:admin
@@ -24,26 +25,25 @@ end
 $DB.create_table :groups, :engine=>:InnoDB do
   primary_key :id
   String      :name
-  foreign_key :owner_user_id, :users, :key=>:id, :null=>false
+  foreign_key :user_id, :users, :key=>:id, :null=>false
   TimeStamp   :created_at
   TimeStamp   :updated_at
 end
 
-$DB.create_table :groups_users, :engine=>:InnoDB do
-  primary_key :id
-  foreign_key :user_id, :users
-  foreign_key :group_id, :groups
-end
+$DB.create_join_table(
+  {:user_id=>:users, :group_id=>:groups}, 
+  {:name=>:groups_users}
+)
 
 $DB.create_table :clients, :engine=>:InnoDB do
   primary_key :id
-  String      :appid, :unique=>true
+  String      :appid, :unique=>true, :index=>true
   String      :secret
   TimeStamp   :created_at
   TimeStamp   :updated_at
 end
 
-$DB.create_table :stbs, :engine=>:InnoDB do
+$DB.create_table :viewers, :engine=>:InnoDB do
   primary_key :id
   String      :name
   String      :phone_number
@@ -86,16 +86,20 @@ $DB.create_table :derivatives, :engine=>:InnoDB do
   TimeStamp   :updated_at
 end
 
-$DB.create_table :stb_like_items, :engine=>:InnoDB do
-  primary_key :id
-  foreign_key :stb_id, :stbs
-  foreign_key :item_id, :items
-end
+$DB.create_join_table(
+  {:viewer_id=>:viewers, :group_id=>:groups}, 
+  {:name=>:groups_viewers}
+)
+
+$DB.create_join_table(
+  {:viewer_id=>:viewers, :item_id=>:items}, 
+  {:name=>:viewer_like_items}
+)
 
 $DB.create_table :access_tokens, :engine=>:InnoDB do
   String      :token,       :primary_key=>true
   foreign_key :user_id,     :users, :null=>true
-  foreign_key :stb_id,      :stbs,  :null=>true
+  foreign_key :viewer_id,   :viewers,  :null=>true
   String      :scope       
   TimeStamp   :expires_at
   TimeStamp   :created_at

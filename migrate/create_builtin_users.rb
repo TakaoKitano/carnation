@@ -3,15 +3,15 @@ require './models'
 #
 # create built-in users
 #
-admin_user = User.generate('admin',  'mago', 'admin@chikaku.com')
+admin_user = User.new('admin',  'mago', 'admin@chikaku.com')
 admin_user.role = 3
 admin_user.save
 
-signup_user = User.generate('signup', 'mago', 'signup@chikaku.com')
+signup_user = User.new('signup', 'mago', 'signup@chikaku.com')
 signup_user.role = 2
 signup_user.save
 
-default_user = User.generate('default', 'mago', 'default@chikaku.com')
+default_user = User.new('default', 'mago', 'default@chikaku.com')
 default_user.role = 1
 default_user.save
 

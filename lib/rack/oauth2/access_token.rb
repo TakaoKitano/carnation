@@ -3,7 +3,7 @@ module Rack
     class AccessToken
       include AttrRequired, AttrOptional
       attr_required :access_token, :token_type, :httpclient
-      attr_optional :refresh_token, :expires_in, :scope, :user_id, :stb_id #@CARNATION
+      attr_optional :refresh_token, :expires_in, :scope, :user_id, :viewer_id #@CARNATION
       delegate :get, :post, :put, :delete, :to => :httpclient
 
       def initialize(attributes = {})
@@ -22,8 +22,8 @@ module Rack
           :access_token => access_token,
           :refresh_token => refresh_token,
           :token_type => token_type,
-          :user_id => user_id, #@CARNATION
-          :stb_id => stb_id,   #@CARNATION
+          :user_id => user_id,       #@CARNATION
+          :viewer_id => viewer_id,   #@CARNATION
           :expires_in => expires_in,
           :scope => Array(scope).join(' ')
         }
