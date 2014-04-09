@@ -7,9 +7,6 @@ describe Item do
       @user = User.new('testuser', 'mago', 'testuser@chikaku.com').save
     end
     @user.items.each do |item|
-      item.derivatives.each do |derivative|
-        derivative.destroy
-      end
       item.destroy
     end
   end
@@ -45,9 +42,6 @@ describe Item do
 
   after do
     @user.items.each do |item|
-      item.derivatives.each do |derivative|
-        derivative.destroy
-      end
       item.destroy
     end
     @user.destroy

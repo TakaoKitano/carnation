@@ -11,8 +11,6 @@ describe User do
       @testuser = User.new('testuser', 'mago', 'testuser@chikaku.com').save
     end
     Group.where(:user_id=>@testuser.id).all.each do |group|
-      group.remove_all_users
-      group.remove_all_viewers
       group.destroy
     end
     Item.where(:user_id=>@testuser.id).all.each do |item|
@@ -94,8 +92,6 @@ describe User do
 
   after do
     Group.where(:user_id=>@testuser.id).all.each do |group|
-      group.remove_all_users
-      group.remove_all_viewers
       group.destroy
     end
     Item.where(:user_id=>@testuser.id).all.each do |item|
@@ -104,7 +100,6 @@ describe User do
     Viewer.where(:user_id=>@testuser.id).all.each do |viewer|
       viewer.destroy
     end
-    @testuser.remove_all_groups
     @testuser.destroy
   end
 

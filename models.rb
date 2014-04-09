@@ -20,6 +20,10 @@ class User < Sequel::Model(:users)
     self.password_hash = Digest::SHA256.hexdigest(self.password_salt + password)
     self.email = email
   end
+  def before_destroy
+    self.remove_all_groups
+    super
+  end
 end
 
 class Group < Sequel::Model(:groups)
@@ -30,6 +34,11 @@ class Group < Sequel::Model(:groups)
     super()
     self.name = name
     self.user_id = owner_user.id
+  end
+  def before_destroy
+      self.remove_all_users
+      self.remove_all_viewers
+      super
   end
 end
 
@@ -52,6 +61,10 @@ class Viewer < Sequel::Model(:viewers)
     self.client_id = client.id
     self.user_id = user.id
   end
+  def before_destroy
+      self.remove_all_items
+      super
+  end
 end
 
 class Item < Sequel::Model(:items)
@@ -66,10 +79,18 @@ class Item < Sequel::Model(:items)
   end
 
   def after_create
+    super
     self.path = "/" + sprintf("%08d", self.user_id) + "/" + sprintf("%08d", self.id) + self.extension
     self.save
   end
-  
+
+  def before_destroy
+    self.derivatives.each do |derivative|
+      derivative.destroy
+    end
+    self.remove_all_viewers
+    super
+  end
 end
 
 
@@ -84,8 +105,9 @@ class Derivative < Sequel::Model(:derivatives)
   end
 
   def after_create
+    super
     item = Item.where(:id => self.item_id).first
-    self.path = "/" + sprintf("%08d", item.user_id) + "/" + sprintf("%08d", self.item_id) + "/" + sprintf("%08d", self.id) + self.extension
+    self.path = "/" + sprintf("%06d", item.user_id) + "/" + sprintf("%06d", self.item_id) + "/" + sprintf("%02d", self.id) + self.extension
     self.save
   end
 end
