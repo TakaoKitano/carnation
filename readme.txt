@@ -14,7 +14,7 @@ sudo lxc-console -n carnation
 # login to the lxc-console ubuntu/ubuntu
 
 sudo apt-get -y update
-sudo apt-get -y install wget curl git
+sudo apt-get -y install wget curl git pkg-config
 
 #
 # adduser kita
@@ -48,6 +48,16 @@ sudo apt-get install -y mysql-server-5.5
 # git clone
 #
 git clone ssh://git@183.181.164.122:3843/home/git/carnation
+
+#
+# install ImageMagick1
+#
+wget http://www.imagemagick.org/download/ImageMagick-6.8.8-10.tar.gz
+tar xvfz ImageMagick-6.8.8-10.tar.gz
+cd ImageMagick-6.8.8.10
+./configure
+make
+sudo make install
 
 #
 # setup bundler

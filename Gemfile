@@ -8,3 +8,4 @@ gem "multi_json"
 gem "httpclient"
 gem "activesupport"
 gem "rspec"
+gem 'rmagick', '2.13.2'

@@ -18,6 +18,7 @@ GEM
     rack (1.5.2)
     rack-protection (1.5.2)
       rack
+    rmagick (2.13.2)
     rspec (2.14.1)
       rspec-core (~> 2.14.0)
       rspec-expectations (~> 2.14.0)
@@ -45,6 +46,7 @@ DEPENDENCIES
   multi_json
   mysql
   mysql2
+  rmagick (= 2.13.2)
   rspec
   sequel
   sinatra
