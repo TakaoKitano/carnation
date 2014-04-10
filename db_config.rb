@@ -10,6 +10,18 @@ $DB_USER_ROLE = {
   :common => 100
 }
 
+$DB_USER_STATUS = {
+  :created => 1,
+  :activated => 2,
+  :deactivated => 3
+}
+
+$DB_VIEWER_STATUS = {
+  :created => 1,
+  :activated => 2,
+  :deactivated => 3,
+}
+
 $DB_ITEM_STATUS = {
   :initiated => 0,
   :uploaded => 1,

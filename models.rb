@@ -19,6 +19,7 @@ class User < Sequel::Model(:users)
     self.name = name
     self.password_salt =SecureRandom.hex 
     self.password_hash = Digest::SHA256.hexdigest(self.password_salt + password)
+    self.status = 0
   end
 
   def create_viewer(name, client=nil)
@@ -85,6 +86,8 @@ class Viewer < Sequel::Model(:viewers)
     self.name = name
     self.client_id = client.id
     self.user_id = user.id
+    self.status = 0
+    self.valid_through = DateTime.now + 365
   end
   def before_destroy
       self.remove_all_items
@@ -110,7 +113,7 @@ class Item < Sequel::Model(:items)
 
   def after_create
     super
-    self.path = "/" + sprintf("%06d", self.user_id) + "/" + sprintf("%06d", self.id)
+    self.path = "/" + sprintf("%08d", self.user_id) + "/" + sprintf("%08d", self.id)
     self.save
   end
 
@@ -137,7 +140,7 @@ class Derivative < Sequel::Model(:derivatives)
 
   def after_create
     super
-    self.path = self.item.path + "/" + sprintf("%02d", self.id)
+    self.path = self.item.path + "_" + sprintf("%02d", self.id)
     self.save
   end
 end
