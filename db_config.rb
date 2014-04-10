@@ -17,3 +17,8 @@ $DB_ITEM_STATUS = {
   :deleted => 3
 }
 
+require 'aws-sdk'
+AWS.config(
+  :access_key_id => 'AKIAI2ZSXBHOXAWRFCQA',
+  :secret_access_key => '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',
+  :region => 'ap-northeast-1')

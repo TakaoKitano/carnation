@@ -8,13 +8,21 @@ GEM
       thread_safe (~> 0.1)
       tzinfo (~> 0.3.37)
     atomic (1.1.16)
+    aws-sdk (1.38.0)
+      json (~> 1.4)
+      nokogiri (>= 1.4.4)
+      uuidtools (~> 2.1)
     diff-lcs (1.2.5)
     httpclient (2.3.4.1)
     i18n (0.6.9)
+    json (1.8.1)
+    mini_portile (0.5.3)
     minitest (4.7.5)
     multi_json (1.9.2)
     mysql (2.9.1)
     mysql2 (0.3.15)
+    nokogiri (1.6.1)
+      mini_portile (~> 0.5.0)
     rack (1.5.2)
     rack-protection (1.5.2)
       rack
@@ -36,12 +44,14 @@ GEM
       atomic (>= 1.1.7, < 2)
     tilt (1.4.1)
     tzinfo (0.3.39)
+    uuidtools (2.1.4)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   activesupport
+  aws-sdk
   httpclient
   multi_json
   mysql
