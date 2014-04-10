@@ -6,20 +6,28 @@ require 'rack/oauth2'
 require 'securerandom' 
 require 'date' 
 
-require './db_connect'
+require './db_config'
 
 class User < Sequel::Model(:users)
   User.plugin :timestamps, :force=>true, :update_on_create=>true
   many_to_many :groups, :left_key=>:user_id, :right_key=>:group_id, :join_table=>:groups_users
   one_to_many :items
   one_to_many :viewers
-  def initialize(name, password, email)
+  def initialize(email="", name="", password="")
     super()
+    self.email = email
     self.name = name
     self.password_salt =SecureRandom.hex 
     self.password_hash = Digest::SHA256.hexdigest(self.password_salt + password)
-    self.email = email
   end
+
+  def create_viewer(name)
+    client = Client.new().save
+    viewer = Viewer.new(name, client, self)
+    self.add_viewer(viewer)
+    return viewer
+  end
+
   def before_destroy
     self.remove_all_groups
     super
@@ -45,10 +53,18 @@ end
 class Client < Sequel::Model(:clients)
   Client.plugin :timestamps, :force=>true, :update_on_create=>true
   one_to_one :viewer, :class=>:Viewer # could be nil, if client credintial is used by app user
-  def initialize()
+  def initialize(values={})
     super()
-    self.appid = SecureRandom.hex 
-    self.secret = SecureRandom.hex 
+    if values[:appid]
+      self.appid = values[:appid]
+    else
+      self.appid = SecureRandom.hex 
+    end
+    if values[:secret]
+      self.secret = values[:secret]
+    else
+      self.secret = SecureRandom.hex 
+    end
   end
 end
 
@@ -65,6 +81,11 @@ class Viewer < Sequel::Model(:viewers)
       self.remove_all_items
       super
   end
+  def after_destroy
+      super
+      client = Client.where(:id=>self.client_id).first
+      client.destroy if client
+  end
 end
 
 class Item < Sequel::Model(:items)
@@ -80,7 +101,7 @@ class Item < Sequel::Model(:items)
 
   def after_create
     super
-    self.path = "/" + sprintf("%08d", self.user_id) + "/" + sprintf("%08d", self.id) + self.extension
+    self.path = "/" + sprintf("%06d", self.user_id) + "/" + sprintf("%06d", self.id)
     self.save
   end
 
@@ -96,6 +117,7 @@ end
 
 class Derivative < Sequel::Model(:derivatives)
   Derivative.plugin :timestamps, :force=>true, :update_on_create=>true
+  many_to_one :item
   def initialize(item, extension, name)
     super()
     self.item_id = item.id
@@ -106,8 +128,7 @@ class Derivative < Sequel::Model(:derivatives)
 
   def after_create
     super
-    item = Item.where(:id => self.item_id).first
-    self.path = "/" + sprintf("%06d", item.user_id) + "/" + sprintf("%06d", self.item_id) + "/" + sprintf("%02d", self.id) + self.extension
+    self.path = self.item.path + "/" + sprintf("%02d", self.id)
     self.save
   end
 end

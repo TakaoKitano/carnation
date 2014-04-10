@@ -1,4 +1,4 @@
-require './db_connect'
+require 'db_config'
 
 $DB.drop_table?:derivatives
 $DB.drop_table?:viewer_like_items
@@ -17,7 +17,7 @@ $DB.create_table :users, :engine=>:InnoDB do
   String      :email, :unique=>true, :null=>false, :index=>true
   String      :password_hash
   String      :password_salt
-  Integer     :role    # 0:normal, 1:default, 2:signup, 3:admin
+  Integer     :role
   TimeStamp   :created_at
   TimeStamp   :updated_at
 end

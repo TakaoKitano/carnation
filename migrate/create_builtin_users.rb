@@ -3,18 +3,17 @@ require './models'
 #
 # create built-in users
 #
-admin_user = User.new('admin',  'mago', 'admin@chikaku.com')
-admin_user.role = 3
-admin_user.save
+user = User.new("admin@chikaku.com" ,"___admin___", "mago")
+user.role = $DB_USER_ROLE[:admin]
+user.save
 
-signup_user = User.new('signup', 'mago', 'signup@chikaku.com')
-signup_user.role = 2
-signup_user.save
+user = User.new("signup@chikaku.com", "___signup___","mago")
+user.role = $DB_USER_ROLE[:signup]
+user.save
 
-default_user = User.new('default', 'mago', 'default@chikaku.com')
-default_user.role = 1
-default_user.save
-
+user = User.new("default@chikaku.com", "___default___","mago")
+user.role = $DB_USER_ROLE[:default]
+user.save
 
 #
 # create built-in client credentials
@@ -23,16 +22,10 @@ default_user.save
 #
 # for admin
 #
-client = Client.new()
-  client.appid = '0a0c9b87622def4da5801edd7e013b4d'
-  client.secret = 'd1572d8cd46913630dfc56f481db818b'
-client.save
+Client.create(:appid=>'0a0c9b87622def4da5801edd7e013b4d',:secret=>'d1572d8cd46913630dfc56f481db818b')
 
 #
 # for application 
 #
-client = Client.new()
-  client.appid = 'e3a5cde0f20a94559691364eb5fb8bff'
-  client.secret =  '116dd4b3a92a17453df0a5ae83e5e640'
-client.save
+Client.create(:appid=>'e3a5cde0f20a94559691364eb5fb8bff',:secret=>'116dd4b3a92a17453df0a5ae83e5e640')
 

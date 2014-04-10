@@ -8,7 +8,7 @@ describe User do
   before do
     @testuser = User.where(:email=>'testuser@chikaku.com').first
     if not @testuser 
-      @testuser = User.new('testuser', 'mago', 'testuser@chikaku.com').save
+      @testuser = User.new('testuser@chikaku.com').save
     end
     Group.where(:user_id=>@testuser.id).all.each do |group|
       group.destroy
@@ -44,7 +44,6 @@ describe User do
     viewer.id.should == user.viewers[0].id
     viewer.user_id.should == user.id
     viewer.destroy
-    client.destroy
   end
 
 
@@ -86,7 +85,6 @@ describe User do
     group.destroy
 
     viewer.destroy
-    client.destroy
 
   end
 

@@ -4,63 +4,61 @@
 require './models'
 
 describe AccessToken do
-  before do
-    @user = User.where(:email=>'user1@chikaku.com').first
-    @user.should_not nil
-    @viewer = Viewer.where(:name=>'viewer1').first
-    @viewer.should_not nil
-  end
 
-  it "can generate token with the given user" do
-    token = AccessToken.new(@user)
-    p "token:" + token.token + ", user_id:" + token.user_id.to_s + ", expires_at:" + token.expires_at.to_s + " scope=" + token.scope.to_s
-    token.should_not nil
-    token.user_id.should == @user.id
-    token.token.length.should > 0
-    token.viewer_id.should == nil
-    token.expires_at.should > token.created_at
-    token.scope.split(' ').include?("read").should == true
-    token.scope.split(' ').include?("like").should == false
-    token.scope.split(' ').include?("create").should == true
-    token.scope.split(' ').include?("delete").should == true
-  end
+  describe "#new" do
+     before do
+       @user = User.find_or_create(:email=>"testuser@chikaku.com") {|user|
+         user.email = "testuser@chikaku.com"
+       }
+     end
 
-  it "can generate bearer token with the given user" do
-    token = AccessToken.new(@user)
-    bearer_token = token.generate_bearer_token
-    bearer_token.access_token.should == token.token
-    bearer_token.user_id.should == token.user_id
-    bearer_token.viewer_id.should == nil
-    bearer_token.scope.should == token.scope
-    bearer_token.expires_in.should == (token.expires_at.to_time.to_i - token.created_at.to_time.to_i)
-  end
+    context "with given user" do
+       it "can create a new token" do
+         token = AccessToken.new(@user)
+         expect(token).not_to be nil
+         expect(token.user_id).to eq(@user.id)
+         expect(token.viewer_id).to be nil
+         expect(token.token.length).to be > 8
+       end
+       it "the result token can generate bearer token" do
+         token = AccessToken.new(@user)
+         bearer = token.generate_bearer_token
+         expect(bearer).not_to be nil
+         expect(bearer.access_token).to eq(token.token)
+         expect(bearer.user_id).to eq(@user.id)
+         expect(bearer.viewer_id).to be nil
+         expect(bearer.scope).to eq(token.scope)
+         expect(bearer.expires_in).to eq(token.expires_at.to_time.to_i - token.created_at.to_time.to_i)
+       end
+    end
 
-  it "can generate token with the given viewer" do
-    token = AccessToken.new(@viewer)
-    p "token:" + token.token + ", viewer_id:" + token.viewer_id.to_s + ", expires_at:" + token.expires_at.to_s + " scope=" + token.scope.to_s
-    token.should_not nil
-    token.user_id.should == nil
-    token.token.length.should > 0
-    token.viewer_id.should == @viewer.id
-    token.expires_at.should > token.created_at
-    token.scope.split(' ').include?("read").should == true
-    token.scope.split(' ').include?("like").should == true
-    token.scope.split(' ').include?("write").should == false
-    token.scope.split(' ').include?("delete").should == false
+    context "with given viewer" do
+       before do
+         @viewer = @user.create_viewer("testviewer")
+       end
+       it "can create a new token" do
+         token = AccessToken.new(@viewer)
+         expect(token).not_to be nil
+         expect(token.user_id).to be nil
+         expect(token.viewer_id).to eq(@viewer.id)
+         expect(token.token.length).to be > 8
+       end
+       it "the result token can generate bearer token" do
+         token = AccessToken.new(@viewer)
+         bearer = token.generate_bearer_token
+         expect(bearer).not_to be nil
+         expect(bearer.access_token).to eq(token.token)
+         expect(bearer.user_id).to be nil
+         expect(bearer.viewer_id).to eq(@viewer.id)
+         expect(bearer.scope).to eq(token.scope)
+         expect(bearer.expires_in).to eq(token.expires_at.to_time.to_i - token.created_at.to_time.to_i)
+       end
+       after do
+         @viewer.destroy if @viewer
+       end
+    end
+    after do
+      @user.destroy if @user
+    end
   end
-
-  it "can generate bearer token with the given viewer" do
-    token = AccessToken.new(@viewer)
-    bearer_token = token.generate_bearer_token
-    bearer_token.access_token.should == token.token
-    bearer_token.viewer_id.should == token.viewer_id
-    bearer_token.user_id.should == nil
-    bearer_token.scope.should == token.scope
-    bearer_token.expires_in.should == (token.expires_at.to_time.to_i - token.created_at.to_time.to_i)
-  end
-
-  after do
-    
-  end
-
 end

@@ -39,6 +39,16 @@ make && make check
 sudo make install
 
 #
+# install ImageMagick
+#
+wget http://www.imagemagick.org/download/ImageMagick-6.8.8-10.tar.gz
+tar xvfz ImageMagick-6.8.8-10.tar.gz
+cd ImageMagick-6.8.8.10
+./configure
+make
+sudo make install
+
+#
 # install mysql
 #
 sudo apt-get install -y libmysqlclient-dev mysql-client-5.5
@@ -49,15 +59,6 @@ sudo apt-get install -y mysql-server-5.5
 #
 git clone ssh://git@183.181.164.122:3843/home/git/carnation
 
-#
-# install ImageMagick1
-#
-wget http://www.imagemagick.org/download/ImageMagick-6.8.8-10.tar.gz
-tar xvfz ImageMagick-6.8.8-10.tar.gz
-cd ImageMagick-6.8.8.10
-./configure
-make
-sudo make install
 
 #
 # setup bundler

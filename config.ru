@@ -1,13 +1,13 @@
 $LOAD_PATH.push('./lib')
 $LOAD_PATH.push('.')
 require "sinatra/base"
-require 'models'
 require 'rack/oauth2'
-require 'carnation'
-require 'token'
+require './models'
+require './carnation'
+require './token'
 
 class Hello < Sinatra::Base
-  get '*' do
+  get '/hello' do
     "hello carnation"
   end
 end
