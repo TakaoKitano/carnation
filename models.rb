@@ -21,11 +21,20 @@ class User < Sequel::Model(:users)
     self.password_hash = Digest::SHA256.hexdigest(self.password_salt + password)
   end
 
-  def create_viewer(name)
-    client = Client.new().save
+  def create_viewer(name, client=nil)
+    client = Client.new().save unless client
     viewer = Viewer.new(name, client, self)
     self.add_viewer(viewer)
     return viewer
+  end
+
+  def create_group(name)
+    group = Group.new(name, self).save
+    group.add_user(self)
+    self.viewers.each do |viewer|
+      group.add_viewer(viewer)
+    end
+    return group
   end
 
   def before_destroy
