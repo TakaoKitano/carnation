@@ -130,9 +130,9 @@ def create_builtin_users
   user.save
 
   client = Client.create(:appid=>"6052d5885f9c2a12c09ef90f815225d3",:secret=>"f6af879a7db8bfbe183e08c1a68e9035")
-  viewer = Viewer.new("testviewer", client, user)
-  user.add_viewer(viewer)
-
+  user.create_viewer("testviewer", client)
+  user.create_group("testgroup")
+  
 
   #
   # create built-in client credentials

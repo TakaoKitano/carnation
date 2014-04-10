@@ -11,12 +11,9 @@ def create_testdata
     Derivative.new(item, ".jpg", "thumbnail").save
     Derivative.new(item, ".jpg", "medium").save
   end
-
   viewer = user.create_viewer("viewer1")
+  group = user.create_group("group1")
 
-  group = Group.new('group1', user).save
-  group.add_user(user)
-  group.add_viewer(viewer)
 
   #
   # setup user2
@@ -28,12 +25,8 @@ def create_testdata
     Derivative.new(item, ".jpg", "thumbnail").save
     Derivative.new(item, ".jpg", "medium").save
   end
-
   viewer = user.create_viewer("viewer2")
-
-  group = Group.new('group2', user).save
-  group.add_user(user)
-  group.add_viewer(viewer)
+  group = user.create_group("group2")
 
   #
   # setup user3
@@ -47,8 +40,6 @@ def create_testdata
   end
 
   viewer = user.create_viewer("viewer3")
+  group = user.create_group("group3")
 
-  group = Group.new('group3', user).save
-  group.add_user(user)
-  group.add_viewer(viewer)
 end
