@@ -9,12 +9,21 @@ class Token < Sinatra::Base
   def authenticator
     p "TokenEndpoint authenticator call"
     Rack::OAuth2::Server::Token.new do |req, res|
+      p "Rack::OAuth2::Server::Token callback"
+      p "req.grant_type=" + req.grant_type.to_s
+
       #
       # check client credential
       #
       #p "client_id=" + req.client_id + " client_secret=" + req.client_secret
-      client = Client.where(:appid => req.client_id).first || req.invalid_client!
+      client = Client.where(:appid => req.client_id).first 
+      if not client
+        p "appid is invalid"
+        p "req.client_id=" + req.client_id
+        req.invalid_client!
+      end
       if (client.secret != req.client_secret) 
+        p "secret is invalid"
         req.invalid_client!
       end
 
@@ -39,6 +48,8 @@ class Token < Sinatra::Base
         end
       when :client_credentials 
         p "client_credentials token request, id and secret is OK"
+        p "client.appid=" + client.appid
+        p "client.secret=" + client.secret
         viewer = client.viewer
         if viewer
           access_token = AccessToken.new(viewer).save

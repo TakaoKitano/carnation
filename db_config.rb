@@ -16,3 +16,4 @@ $DB_ITEM_STATUS = {
   :trashed => 2,
   :deleted => 3
 }
+
