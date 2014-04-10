@@ -19,6 +19,7 @@ def create_tables(db)
     String      :password_hash
     String      :password_salt
     Integer     :role
+    Integer     :status
     TimeStamp   :created_at
     TimeStamp   :updated_at
   end
@@ -50,8 +51,10 @@ def create_tables(db)
     String      :phone_number
     String      :postal_code
     String      :address, :text=>true
+    Integer     :status
     foreign_key :user_id,  :users, :null=>false
     foreign_key :client_id, :clients, :null=>false
+    TimeStamp   :valid_through
     TimeStamp   :created_at
     TimeStamp   :updated_at
   end
