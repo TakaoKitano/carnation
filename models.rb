@@ -9,7 +9,6 @@ require 'date'
 require './db_config'
 
 class User < Sequel::Model(:users)
-  User.plugin :timestamps, :force=>true, :update_on_create=>true
   many_to_many :groups, :left_key=>:user_id, :right_key=>:group_id, :join_table=>:groups_users
   one_to_many :items
   one_to_many :viewers
@@ -20,6 +19,7 @@ class User < Sequel::Model(:users)
     self.password_salt =SecureRandom.hex 
     self.password_hash = Digest::SHA256.hexdigest(self.password_salt + password)
     self.status = 0
+    self.created_at = Time.now.to_i
   end
 
   def create_viewer(name, client=nil)
@@ -45,13 +45,13 @@ class User < Sequel::Model(:users)
 end
 
 class Group < Sequel::Model(:groups)
-  Group.plugin :timestamps, :force=>true, :update_on_create=>true
   many_to_many :users, :left_key=>:group_id, :right_key=>:user_id, :join_table=>:groups_users
   many_to_many :viewers, :left_key=>:group_id, :right_key=>:viewer_id, :join_table=>:groups_viewers
   def initialize(name, owner_user)
     super()
     self.name = name
     self.user_id = owner_user.id
+    self.created_at = Time.now.to_i
   end
   def before_destroy
       self.remove_all_users
@@ -61,7 +61,6 @@ class Group < Sequel::Model(:groups)
 end
 
 class Client < Sequel::Model(:clients)
-  Client.plugin :timestamps, :force=>true, :update_on_create=>true
   one_to_one :viewer, :class=>:Viewer # could be nil, if client credintial is used by app user
   def initialize(values={})
     super()
@@ -75,11 +74,11 @@ class Client < Sequel::Model(:clients)
     else
       self.secret = SecureRandom.hex 
     end
+    self.created_at = Time.now.to_i
   end
 end
 
 class Viewer < Sequel::Model(:viewers)
-  Viewer.plugin :timestamps, :force=>true, :update_on_create=>true
   many_to_many :items, :left_key=>:viewer_id, :right_key=>:item_id, :join_table=>:viewer_like_items;
   def initialize(name, client, user)
     super()
@@ -87,7 +86,8 @@ class Viewer < Sequel::Model(:viewers)
     self.client_id = client.id
     self.user_id = user.id
     self.status = 0
-    self.valid_through = DateTime.now + 365
+    self.valid_through = Time.now.to_i + 3600 * 24 * 365
+    self.created_at = Time.now.to_i
   end
   def before_destroy
       self.remove_all_items
@@ -101,7 +101,6 @@ class Viewer < Sequel::Model(:viewers)
 end
 
 class Item < Sequel::Model(:items)
-  Item.plugin :timestamps, :force=>true, :update_on_create=>true
   many_to_many :viewers, :left_key=>:item_id, :right_key=>:viewer_id, :join_table=>:viewer_like_items;
   one_to_many :derivatives
   def initialize(user, extension)
@@ -109,11 +108,12 @@ class Item < Sequel::Model(:items)
     self.user_id = user.id
     self.extension = extension
     self.status = 0
+    self.created_at = Time.now.to_i
   end
 
   def after_create
     super
-    self.path = "/" + sprintf("%08d", self.user_id) + "/" + sprintf("%08d", self.id)
+    self.path = sprintf("%08d", self.user_id) + "/" + sprintf("%08d", self.id)
     self.save
   end
 
@@ -128,7 +128,6 @@ end
 
 
 class Derivative < Sequel::Model(:derivatives)
-  Derivative.plugin :timestamps, :force=>true, :update_on_create=>true
   many_to_one :item
   def initialize(item, extension, name)
     super()
@@ -136,6 +135,7 @@ class Derivative < Sequel::Model(:derivatives)
     self.extension = extension
     self.name = name
     self.status = 0
+    self.created_at = Time.now.to_i
   end
 
   def after_create
@@ -157,9 +157,9 @@ class AccessToken < Sequel::Model(:access_tokens)
         self.user_id = viewer_or_user.id
         self.scope = "read create delete"
       end
-      now = DateTime.now
+      now = Time.now.to_i
       self.created_at = now
-      self.expires_at = now + 3 * (24.0/24.0)  # 3 days for now
+      self.expires_at = now + 3 * (3600 * 24)  # 3 days for now
   end
 
   def generate_bearer_token
@@ -168,7 +168,7 @@ class AccessToken < Sequel::Model(:access_tokens)
       :user_id => self.user_id,
       :viewer_id => self.viewer_id,
       :scope => self.scope,
-      :expires_in => self.expires_at.to_time.to_i - self.created_at.to_time.to_i
+      :expires_in => self.expires_at - self.created_at
     )
   end
 end

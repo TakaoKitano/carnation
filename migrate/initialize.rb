@@ -20,16 +20,14 @@ def create_tables(db)
     String      :password_salt
     Integer     :role
     Integer     :status
-    TimeStamp   :created_at
-    TimeStamp   :updated_at
+    Integer     :created_at
   end
 
   db.create_table :groups, :engine=>:InnoDB do
     primary_key :id
     String      :name
     foreign_key :user_id, :users, :key=>:id, :null=>false
-    TimeStamp   :created_at
-    TimeStamp   :updated_at
+    Integer     :created_at
   end
 
   db.create_join_table(
@@ -41,8 +39,7 @@ def create_tables(db)
     primary_key :id
     String      :appid, :unique=>true, :index=>true
     String      :secret
-    TimeStamp   :created_at
-    TimeStamp   :updated_at
+    Integer     :created_at
   end
 
   db.create_table :viewers, :engine=>:InnoDB do
@@ -54,9 +51,8 @@ def create_tables(db)
     Integer     :status
     foreign_key :user_id,  :users, :null=>false
     foreign_key :client_id, :clients, :null=>false
-    TimeStamp   :valid_through
-    TimeStamp   :created_at
-    TimeStamp   :updated_at
+    Integer     :valid_through
+    Integer     :created_at
   end
 
   db.create_table :items, :engine=>:InnoDB do
@@ -70,9 +66,8 @@ def create_tables(db)
     Integer     :height,   :null=>true
     Integer     :duration, :null=>true
     Integer     :filesize, :null=>true
-    TimeStamp   :valid_after
-    TimeStamp   :created_at
-    TimeStamp   :updated_at
+    Integer     :valid_after
+    Integer     :created_at
   end
 
   db.create_table :derivatives, :engine=>:InnoDB do
@@ -86,8 +81,7 @@ def create_tables(db)
     Integer     :height,   :null=>true
     Integer     :duration, :null=>true
     Integer     :filesize, :null=>true
-    TimeStamp   :created_at
-    TimeStamp   :updated_at
+    Integer     :created_at
   end
 
   db.create_join_table(
@@ -105,8 +99,8 @@ def create_tables(db)
     foreign_key :user_id,     :users, :null=>true
     foreign_key :viewer_id,   :viewers,  :null=>true
     String      :scope       
-    TimeStamp   :expires_at
-    TimeStamp   :created_at
+    Integer     :expires_at
+    Integer     :created_at
   end
 
 end
