@@ -28,7 +28,7 @@ describe AccessToken do
          expect(bearer.user_id).to eq(@user.id)
          expect(bearer.viewer_id).to be nil
          expect(bearer.scope).to eq(token.scope)
-         expect(bearer.expires_in).to eq(token.expires_at.to_time.to_i - token.created_at.to_time.to_i)
+         expect(bearer.expires_in).to eq(token.expires_at - token.created_at)
        end
     end
 
@@ -51,7 +51,7 @@ describe AccessToken do
          expect(bearer.user_id).to be nil
          expect(bearer.viewer_id).to eq(@viewer.id)
          expect(bearer.scope).to eq(token.scope)
-         expect(bearer.expires_in).to eq(token.expires_at.to_time.to_i - token.created_at.to_time.to_i)
+         expect(bearer.expires_in).to eq(token.expires_at - token.created_at)
        end
        after do
          @viewer.destroy if @viewer
