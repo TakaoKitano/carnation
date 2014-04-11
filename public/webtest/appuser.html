@@ -2,18 +2,52 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<link rel="stylesheet" href="css/pure-min.css">
 <title>carnation webtest appuser</title>
 </head>
 <body>
   <h1>appuser test</h1>
-    <dl>
-      <dt>user_id</dt><dd id="user_id"/>
-      <dt>token</dt><dd id="token"/>
-      <dt>scope</dt><dd id="scope"/>
-      <dt>token_type</dt><dd id="token_type"/>
-      <dt>valid until</dt><dd id="valid_until"/>
-    </dl>
-    <hr/>
+    <p>
+      user_id: <span id="user_id"></span><br/>
+      token: <span id="token"></span><br/>
+      scope: <span id="scope"></span><br/>
+      token_type: <span id="token_type"></span><br/>
+      valid until: <span id="valid_until"></span>
+    </p>
+
+    <hr/><h4>initiate_upload</h4>
+    <form action="/carnation/api/initiate_upload" method="get" target="result">
+      user_id:<input type="text" name="user_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
+      name:<input type="text" name="name" size="10"/>
+      width:<input type="number" name="width" size="10"/>
+      height:<input type="number" name="height" size="10"/>
+      extension:<select name="extension">
+        <option value=".jpg">.jpg</option>
+        <option value=".png">.png</option>
+        <option value=".mp4">.mp4</option>
+      </select>
+      <input type="submit" value="send">
+    </form>
+
+    <hr/><h4>notify_uploaded</h4>
+    <form action="/carnation/api/notify_uploaded" method="get" target="result">
+      user_id:<input type="text" name="user_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
+      valid_after:<input type="text" name="valid_after" size="5"/>
+      <input type="submit" value="send">
+    </form>
+
+    <hr/><h4>get_user_images</h4>
+    <form action="/carnation/api/get_user_images" method="get" target="result">
+      user_id:<input type="text" name="user_id" size="2"/>
+      count:<input type="number" name="count" size="2"/>
+      greater_than:<input type="number" name="greater_than" size="1"/>
+      less_than:<input type="number" name="less_than" size="1"/>
+      offset:<input type="number" name="offset" size="1"/>
+      <input type="submit" value="send">
+    </form>
+
   <script src="js/jquery-2.1.0.js"></script>
   <script src="js/access_token.js"></script>
   <script src="js/appuser.js"></script>

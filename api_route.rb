@@ -4,6 +4,13 @@ require 'carnation'
 
 class ApiRoute < Sinatra::Base
 
+  configure :development do 
+    Bundler.require :development 
+    register Sinatra::Reloader 
+    also_reload './carnation.rb'
+    p "Sinatra::Reloader registered"
+  end 
+
   def initialize
     super
     @carnation = Carnation.new
@@ -35,6 +42,14 @@ class ApiRoute < Sinatra::Base
     p "access_token:", token if token
     response['Content-Type'] = 'application/json'
     ret = @carnation.notify_uploaded(request.params)
+    JSON.pretty_generate(ret)
+  end
+
+  get '/carnation/api/get_user_images' do
+    token = request.env[Rack::OAuth2::Server::Resource::ACCESS_TOKEN]
+    p "access_token:", token if token
+    response['Content-Type'] = 'application/json'
+    ret = @carnation.get_user_images(request.params)
     JSON.pretty_generate(ret)
   end
 
