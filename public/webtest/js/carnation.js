@@ -1,20 +1,25 @@
-(function (exports, $) {
-  var storage = exports.localStorage;
+(function (window, $) {
+  var storage = window.localStorage;
 
-  exports.carnation = exports.carnation || {};
-  exports.carnation.get_appuser_token = function (callback) {
-    var token, valid_until, now;
+  window.carnation = window.carnation || {};
+  var carnation = window.carnation;
+
+  carnation.get_appuser_token = function (callback) {
+    var access_token, valid_until, now;
+
     now = new Date().getTime();
-    token = storage.getItem("carnation.appuser.token.access_token");
+    access_token = storage.getItem("carnation.appuser.token.access_token");
     valid_until = storage.getItem("carnation.appuser.token.valid_until");
-    if (token && valid_until) {
-      console.log("we have appuser access token token=" + token);
+    if (access_token && valid_until) {
+      console.log("we have appuser access_token=" + access_token);
       console.log("valid_until=" + valid_until);
       console.log("now=" + now);
     }
-    if (token && valid_until > now) {
+    if (access_token && valid_until > now) {
+      console.log("set carnation.access_token=" + access_token);
+      carnation.access_token = access_token;
       callback({ 
-	access_token: token, 
+	access_token: access_token, 
 	user_id: storage.getItem("carnation.appuser.token.user_id"),
 	scope: storage.getItem("carnation.appuser.token.scope"),
 	token_type: storage.getItem("carnation.appuser.token.token_type"),
@@ -30,6 +35,7 @@
         headers: {Authorization: "Basic MGEwYzliODc2MjJkZWY0ZGE1ODAxZWRkN2UwMTNiNGQ6ZDE1NzJkOGNkNDY5MTM2MzBkZmM1NmY0ODFkYjgxOGI="}
       }).done(function( token ) {
 	var valid_until;
+        carnation.access_token = token.access_token;
 	storage.setItem("carnation.appuser.token.access_token", token.access_token);
 	storage.setItem("carnation.appuser.token.expires_in", token.expires_in);
 	storage.setItem("carnation.appuser.token.token_type", token.token_type);
@@ -54,19 +60,25 @@
     }
   };
 
-  exports.carnation.get_viewer_token = function (callback) {
-    var token, valid_until, now;
+  carnation.reset_appuser_token = function (callback) {
+    storage.setItem("carnation.appuser.token.valid_until", 0);
+    carnation.get_appuser_token(callback);
+  }
+
+  carnation.get_viewer_token = function (callback) {
+    var access_token, valid_until, now;
     now = new Date().getTime();
-    token = storage.getItem("carnation.viewer.token.access_token");
+    access_token = storage.getItem("carnation.viewer.token.access_token");
     valid_until = storage.getItem("carnation.viewer.token.valid_until");
-    if (token && valid_until) {
-      console.log("we have appuser access token token=" + token);
+    if (access_token && valid_until) {
+      console.log("we have appuser access token token=" + access_token);
       console.log("valid_until=" + valid_until);
       console.log("now=" + now);
     }
-    if (token && valid_until > now) {
+    if (access_token && valid_until > now) {
+      carnation.access_token = access_token;
       callback({ 
-	access_token: token, 
+	access_token: access_token, 
 	viewer_id: storage.getItem("carnation.viewer.token.viewer_id"),
 	scope: storage.getItem("carnation.viewer.token.scope"),
 	token_type: storage.getItem("carnation.viewer.token.token_type"),
@@ -82,6 +94,7 @@
 	headers: {Authorization:"Basic NjA1MmQ1ODg1ZjljMmExMmMwOWVmOTBmODE1MjI1ZDM6ZjZhZjg3OWE3ZGI4YmZiZTE4M2UwOGMxYTY4ZTkwMzU="}
       }).done(function( token ) {
 	var valid_until;
+        carnation.access_token = access_token;
 	storage.setItem("carnation.viewer.token.access_token", token.access_token);
 	storage.setItem("carnation.viewer.token.expires_in", token.expires_in);
 	storage.setItem("carnation.viewer.token.token_type", token.token_type);
@@ -104,6 +117,50 @@
         });
       });
     }
-  };
+  }
+
+  carnation.reset_viewer_token = function (callback) {
+    storage.setItem("carnation.viewer.token.valid_until", 0);
+    carnation.get_viewer_token(callback);
+  }
+
+  carnation.show_token = function(token) {
+    $("#user_id").text(token.user_id)
+    $("#viewer_id").text(token.viewer_id)
+    $("#token").text(token.access_token)
+    $("#token_type").text(token.token_type)
+    $("#scope").text(token.scope)
+    $("#valid_until").text(new Date(parseInt(token.valid_until)))
+  }
+
+  $("#reset_token").click( function () {
+    console.log( "reset_token!" );
+    carnation.reset_appuser_token(function(token) {
+      carnation.show_token(token);
+    });
+  });
+
+  $(".carnation_api").submit( function (event) {
+    console.log( "carnation_api" );
+    event.preventDefault();
+    console.log( "token=" + carnation.access_token );
+    var form = $(this);
+ 
+    $.ajax({
+      url: form.attr('action'),
+      type: form.attr('method'),
+      data: form.serialize(),
+      headers: {Authorization:"Bearer " + carnation.access_token}
+    }).done(function( data ) {
+      var result_window = window.open("", "result");
+      console.log( "result_window=" + result_window);
+      with(result_window.document)
+      {
+        open();
+        write(JSON.stringify(data));
+        close();
+      }
+    });
+  });
 }(window, jQuery));
 
