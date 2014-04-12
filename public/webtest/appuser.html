@@ -13,10 +13,11 @@
       scope: <span id="scope"></span><br/>
       token_type: <span id="token_type"></span><br/>
       valid until: <span id="valid_until"></span>
+      <button id="reset_token">retrieve</button>
     </p>
 
     <hr/><h4>initiate_upload</h4>
-    <form action="/carnation/api/initiate_upload" method="get" target="result">
+    <form class="carnation_api" action="/carnation/api/initiate_upload" method="get">
       user_id:<input type="text" name="user_id" size="5"/>
       item_id:<input type="text" name="item_id" size="5"/>
       name:<input type="text" name="name" size="10"/>
@@ -31,7 +32,7 @@
     </form>
 
     <hr/><h4>notify_uploaded</h4>
-    <form action="/carnation/api/notify_uploaded" method="get" target="result">
+    <form class="carnation_api" action="/carnation/api/notify_uploaded" method="get">
       user_id:<input type="text" name="user_id" size="5"/>
       item_id:<input type="text" name="item_id" size="5"/>
       valid_after:<input type="text" name="valid_after" size="5"/>
@@ -39,7 +40,7 @@
     </form>
 
     <hr/><h4>get_user_images</h4>
-    <form action="/carnation/api/get_user_images" method="get" target="result">
+    <form class="carnation_api" action="/carnation/api/get_user_images" method="get">
       user_id:<input type="text" name="user_id" size="2"/>
       count:<input type="number" name="count" size="2"/>
       greater_than:<input type="number" name="greater_than" size="1"/>
@@ -49,7 +50,17 @@
     </form>
 
   <script src="js/jquery-2.1.0.js"></script>
-  <script src="js/access_token.js"></script>
-  <script src="js/appuser.js"></script>
+  <script src="js/carnation.js"></script>
+  <script>
+    (function (window, $) {
+      var carnation = window.carnation;
+
+      carnation.get_appuser_token(function(token) {
+        carnation.show_token(token);
+        $('*[name="user_id"]').val(token.user_id);
+      });
+
+    }(window, jQuery));
+  </script>
 </body>
 </html>
