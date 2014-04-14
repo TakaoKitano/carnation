@@ -8,6 +8,7 @@ class ApiRoute < Sinatra::Base
     Bundler.require :development 
     register Sinatra::Reloader 
     also_reload './carnation.rb'
+    also_reload './models.rb'
     p "Sinatra::Reloader registered"
   end 
 

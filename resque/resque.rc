@@ -1,0 +1,8 @@
+queues: 'default'
+require: './models.rb'
+require: './create_derivatives.rb'
+pid_file: './resque.pid'
+interval: 1
+daemon: false
+timeout: 5
+graceful_term: false

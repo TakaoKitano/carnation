@@ -14,8 +14,10 @@ sudo lxc-console -n carnation
 # login to the lxc-console ubuntu/ubuntu
 
 sudo apt-get -y update
-sudo apt-get -y install wget curl git pkg-config
-
+sudo apt-get -y install wget curl git pkg-config 
+sudo apt-get -y install redis-server
+sudo apt-get -y install imagemagick
+sudo apt-get install libmagickwand-dev
 #
 # adduser kita
 # add kita to sudo group (/etc/group)
@@ -38,15 +40,6 @@ cd ruby-2.1.1
 make && make check
 sudo make install
 
-#
-# install ImageMagick
-#
-wget http://www.imagemagick.org/download/ImageMagick-6.8.8-10.tar.gz
-tar xvfz ImageMagick-6.8.8-10.tar.gz
-cd ImageMagick-6.8.8.10
-./configure
-make
-sudo make install
 
 #
 # install mysql
@@ -80,6 +73,11 @@ mysql -u root <migrate/setupdb.sql
 # create tables, populate first test data (you need to do every time you modify schema)
 #
 bundle exec ruby migrate/db_init.rb
+
+#
+# run resque worker
+#
+bundle exec resque work -c ./.resque
 
 #
 # have fun

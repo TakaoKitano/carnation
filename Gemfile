@@ -11,5 +11,6 @@ gem "multi_json"
 gem "httpclient"
 gem "activesupport"
 gem "rspec"
-gem 'rmagick', '2.13.2'
 gem 'aws-sdk'
+gem "resque", "~> 2.0.0.pre.1", github: "resque/resque"
+gem "rmagick"
