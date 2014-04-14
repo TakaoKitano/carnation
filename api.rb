@@ -34,7 +34,7 @@ class Api < Sinatra::Base
     user = User.where(:id=>user_id).first 
     halt(400, "user_id invalid") if not user
 
-    if (item_id > 0) 
+    if item_id > 0 
       item = Item.where(:id=>item_id).first 
       halt(400, "item_id invalid") if not item
     else 
