@@ -3,10 +3,6 @@ require 'aws-sdk'
 require './models'
 
 class Carnation
-  def initialize
-    @s3 = AWS::S3.new
-    @bucket = @s3.buckets['carnationdata']
-  end
 
   def initiate_upload(params)
     user_id = params["user_id"].to_i
@@ -32,7 +28,7 @@ class Carnation
       item.save
     end
 
-    s3obj = @bucket.objects[item.path + extension]
+    s3obj = $bucket.objects[item.path + extension]
     ps = AWS::S3::PresignV4.new(s3obj)
     uri = ps.presign(:put, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
     return {:item_id=>item.id, :url=>uri.to_s}
@@ -88,14 +84,14 @@ class Carnation
       item.derivatives.each do |derivative|
         derivatives << {:id=>derivative.id, :url=>presigned_url(derivative)}
       end
-      images << {:id=>item.id, :status=>item.status, :valid_after=>item.valid_after, :url=>presigned_url(item), :liked_by=>liked_by, :derivatives=>derivatives}
+      images << {:id=>item.id, :status=>item.status, :valid_after=>item.valid_after, :url=>item.presigned_url(:get), :liked_by=>liked_by, :derivatives=>derivatives}
     end
     return {:user_id=>user_id, :items=>images}
   end
 
   private
   def presigned_url(item)
-    s3obj = @bucket.objects[item.path + item.extension]
+    s3obj = $bucket.objects[item.path + item.extension]
     ps = AWS::S3::PresignV4.new(s3obj)
     uri = ps.presign(:get, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
     uri.to_s

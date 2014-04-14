@@ -1,8 +1,13 @@
 require 'sequel'
 require 'mysql2'
+require 'aws-sdk'
 
 $DB = Sequel.connect('mysql://carnation:magomago@localhost/carnationdb')
 Sequel.default_timezone = :utc
+
+require 'resque'
+Resque.redis = 'localhost:6379'
+
 
 $DB_USER_ROLE = {
   :admin => 1,
@@ -35,3 +40,6 @@ AWS.config(
   :access_key_id => 'AKIAI2ZSXBHOXAWRFCQA',
   :secret_access_key => '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',
   :region => 'ap-northeast-1')
+
+$s3 = AWS::S3.new
+$bucket = $s3.buckets['carnationdata']

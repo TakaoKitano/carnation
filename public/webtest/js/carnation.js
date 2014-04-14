@@ -145,14 +145,15 @@
     event.preventDefault();
     console.log( "token=" + carnation.access_token );
     var form = $(this);
- 
+    var result_window = window.open("", "result");
+    var serialized_form = form.serialize();
+    $('#serialized_form').html(serialized_form);
     $.ajax({
       url: form.attr('action'),
       type: form.attr('method'),
       data: form.serialize(),
       headers: {Authorization:"Bearer " + carnation.access_token}
     }).done(function( data ) {
-      var result_window = window.open("", "result");
       console.log( "result_window=" + result_window);
       with(result_window.document)
       {

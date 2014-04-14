@@ -124,6 +124,13 @@ class Item < Sequel::Model(:items)
     self.remove_all_viewers
     super
   end
+
+  def presigned_url(method_symbol)
+    s3obj = $bucket.objects[self.path + self.extension]
+    ps = AWS::S3::PresignV4.new(s3obj)
+    uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
+    uri.to_s
+  end
 end
 
 
