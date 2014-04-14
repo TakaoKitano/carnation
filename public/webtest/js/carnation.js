@@ -147,18 +147,32 @@
     var form = $(this);
     var result_window = window.open("", "result");
     var serialized_form = form.serialize();
-    $('#serialized_form').html(serialized_form);
+    $(form).find('#description').html('');
+    $(form).find('#description').append('method:' + form.attr('method') + '<br/>');
+    $(form).find('#description').append('url:' + form.attr('action') + '<br/>');
+    $(form).find('#description').append('params:' + serialized_form);
+
     $.ajax({
       url: form.attr('action'),
       type: form.attr('method'),
       data: form.serialize(),
       headers: {Authorization:"Bearer " + carnation.access_token}
     }).done(function( data ) {
-      console.log( "result_window=" + result_window);
       with(result_window.document)
       {
         open();
-        write(JSON.stringify(data));
+        write("<html><body><pre>");
+        write(JSON.stringify(data, null, "  "));
+        write("</pre></body><html>");
+        close();
+      }
+    }).error(function( data ) {
+      with(result_window.document)
+      {
+        open();
+        write("<html><body><pre>");
+        write(JSON.stringify(data, null, "  "));
+        write("</pre></body><html>");
         close();
       }
     });

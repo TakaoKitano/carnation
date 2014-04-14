@@ -17,8 +17,8 @@
     </p>
     <p id="serialized_form"></p>
 
-    <hr/><h4>initiate_upload</h4>
-    <form class="carnation_api" action="/carnation/api/initiate_upload" method="get">
+    <hr/><h4>initiate item upload</h4>
+    <form class="carnation_api" action="/apiv1/initiate_item" method="post">
       user_id:<input type="text" name="user_id" size="5"/>
       item_id:<input type="text" name="item_id" size="5"/>
       name:<input type="text" name="name" size="10"/>
@@ -29,7 +29,7 @@
         <option value=".png">.png</option>
         <option value=".mp4">.mp4</option>
       </select>
-      <input type="submit" value="send">
+      <input type="reset" value="reset"><br/><input type="submit" value="send"><p id="description"/>
     </form>
 
     <hr/><h4>notify_uploaded</h4>
@@ -37,7 +37,7 @@
       user_id:<input type="text" name="user_id" size="5"/>
       item_id:<input type="text" name="item_id" size="5"/>
       valid_after:<input type="text" name="valid_after" size="5"/>
-      <input type="submit" value="send">
+      <input type="reset" value="reset"><br/><input type="submit" value="send"><p id="description"/>
     </form>
 
     <hr/><h4>get_user_images</h4>
@@ -47,7 +47,7 @@
       greater_than:<input type="number" name="greater_than" size="1"/>
       less_than:<input type="number" name="less_than" size="1"/>
       offset:<input type="number" name="offset" size="1"/>
-      <input type="submit" value="send">
+      <input type="reset" value="reset"><br/><input type="submit" value="send"><p id="description"/>
     </form>
 
   <script src="js/jquery-2.1.0.js"></script>

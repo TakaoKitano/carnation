@@ -145,6 +145,13 @@ class Derivative < Sequel::Model(:derivatives)
     self.created_at = Time.now.to_i
   end
 
+  def presigned_url(method_symbol)
+    s3obj = $bucket.objects[self.path + self.extension]
+    ps = AWS::S3::PresignV4.new(s3obj)
+    uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
+    uri.to_s
+  end
+
   def after_create
     super
     self.path = self.item.path + "_" + sprintf("%02d", self.id)
