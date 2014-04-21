@@ -17,6 +17,7 @@ sudo apt-get -y update
 sudo apt-get -y install wget curl git pkg-config 
 sudo apt-get -y install redis-server
 sudo apt-get -y install imagemagick
+sudo apt-get -y install libmagickwand-dev
 
 #
 # adduser kita

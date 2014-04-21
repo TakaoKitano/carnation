@@ -95,8 +95,9 @@ def create_tables(db)
   end
 
   db.create_table(:derivatives) do
-    primary_key :id
-    foreign_key :item_id, :items, :null=>false
+    foreign_key :item_id, :items, :null=>false, :index=>true
+    Integer     :index
+    primary_key [:item_id, :index]
     String      :path
     String      :extension  
     Integer     :status     

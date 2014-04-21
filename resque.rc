@@ -3,5 +3,5 @@ require: 'resque_workers.rb'
 pid_file: 'resque/resque.pid'
 interval: 1
 daemon: false
-timeout: 5
+timeout: 30
 graceful_term: false
