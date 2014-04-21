@@ -13,12 +13,16 @@
       scope: <span id="scope"></span><br/>
       token_type: <span id="token_type"></span><br/>
       valid until: <span id="valid_until"></span>
-      <button id="reset_token">retrieve</button>
     </p>
+    <form class="get_user_token" action="/token" method="post">
+      email:<input type="text" value="test01@chikaku.com" name="email" size="20"/>
+      password:<input type="text" value="dx7PnxqDZ5kr" name="password" size="15"/>
+      <input type="reset" value="reset"><br/><input type="submit" value="retrieve access token"><p id="description"/>
+    </form>
     <p id="serialized_form"></p>
 
     <hr/><h4>initiate item upload</h4>
-    <form class="carnation_api" action="/apiv1/initiate_item" method="post">
+    <form class="carnation_api" action="/api/v1/item/initiate" method="post" id="upload">
       user_id:<input type="text" name="user_id" size="5"/>
       item_id:<input type="text" name="item_id" size="5"/>
       name:<input type="text" name="name" size="10"/>
@@ -29,11 +33,29 @@
         <option value=".png">.png</option>
         <option value=".mp4">.mp4</option>
       </select>
-      <input type="reset" value="reset"><br/><input type="submit" value="send"><p id="description"/>
+      <input type="reset" value="reset"><br/>
+      <input type="submit" value="send"><br/>
+      <p id="description"/>
+    </form>
+
+    <hr/><h4>initiate item upload with browser (test purpose only) </h4>
+    <form action="/api/v1/item/initiate_post" method="post" target="result">
+      user_id:<input type="text" name="user_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
+      name:<input type="text" name="name" size="10"/>
+      width:<input type="number" name="width" size="10"/>
+      height:<input type="number" name="height" size="10"/>
+      extension:<select name="extension">
+        <option value=".jpg">.jpg</option>
+        <option value=".png">.png</option>
+        <option value=".mp4">.mp4</option>
+      </select>
+      <input type="reset" value="reset"><br/>
+      <input type="submit" value="send"><br/>
     </form>
 
     <hr/><h4>notify_uploaded</h4>
-    <form class="carnation_api" action="/carnation/api/notify_uploaded" method="get">
+    <form class="carnation_api" action="/api/v1/item/uploaded" method="put">
       user_id:<input type="text" name="user_id" size="5"/>
       item_id:<input type="text" name="item_id" size="5"/>
       valid_after:<input type="text" name="valid_after" size="5"/>
@@ -41,11 +63,14 @@
     </form>
 
     <hr/><h4>get_user_images</h4>
-    <form class="carnation_api" action="/carnation/api/get_user_images" method="get">
-      user_id:<input type="text" name="user_id" size="2"/>
+    <form class="carnation_api" action="/api/v1/user/images" method="get">
+      user_id:<input type="text" name="user_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
       count:<input type="number" name="count" size="2"/>
       greater_than:<input type="number" name="greater_than" size="1"/>
       less_than:<input type="number" name="less_than" size="1"/>
+      created_after:<input type="number" name="created_after" size="1"/>
+      created_before:<input type="number" name="created_before" size="1"/>
       offset:<input type="number" name="offset" size="1"/>
       <input type="reset" value="reset"><br/><input type="submit" value="send"><p id="description"/>
     </form>
@@ -53,15 +78,17 @@
   <script src="js/jquery-2.1.0.js"></script>
   <script src="js/carnation.js"></script>
   <script>
-    (function (window, $) {
-      var carnation = window.carnation;
 
-      carnation.get_appuser_token(function(token) {
+    $(".get_user_token").submit( function (event) {
+      console.log( "get user token" );
+      event.preventDefault();
+      email = $(this).find('*[name=email]')[0].value;
+      password = $(this).find('*[name=password]')[0].value;
+      carnation.get_appuser_token(email, password, function(token) {
         carnation.show_token(token);
         $('*[name="user_id"]').val(token.user_id);
       });
-
-    }(window, jQuery));
+    });
   </script>
 </body>
 </html>

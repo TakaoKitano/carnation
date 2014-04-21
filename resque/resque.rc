@@ -1,7 +1,6 @@
 queues: 'default'
-require: './models.rb'
-require: './create_derivatives.rb'
-pid_file: './resque.pid'
+require: 'resque_workers.rb'
+pid_file: 'resque/resque.pid'
 interval: 1
 daemon: false
 timeout: 5

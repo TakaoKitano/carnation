@@ -7,9 +7,7 @@ describe AccessToken do
 
   describe "#new" do
      before do
-       @user = User.find_or_create(:email=>"testuser@chikaku.com") {|user|
-         user.email = "testuser@chikaku.com"
-       }
+       @user = User.find(:name=>"test01")
      end
 
     context "with given user" do
@@ -58,7 +56,6 @@ describe AccessToken do
        end
     end
     after do
-      @user.destroy if @user
     end
   end
 end

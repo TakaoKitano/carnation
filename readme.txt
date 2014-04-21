@@ -67,23 +67,28 @@ bundle install --path vendor/bundle
 #
 # create database, setup account (you only need to do this once) 
 #
-mysql -u root <migrate/setupdb.sql
+mysql -u root <initialize_database.sql
 
 #
 # create tables, populate first test data (you need to do every time you modify schema)
 #
-bundle exec ruby migrate/db_init.rb
+bundle exec ruby dbinit.rb
 
 #
 # run resque worker
 #
-bundle exec resque work -c ./.resque
+bundle exec resque work -c resque/resque.rc
+
+#
+# reload resque worker process if code is modified
+#
+kill -9 `cat resque/resque.pid`
+bundle exec resque work -c resque/resque.rc
 
 #
 # have fun
 #
 bundle exec irb 
-require './models'
 
 or
  
