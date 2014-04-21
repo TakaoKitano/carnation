@@ -6,31 +6,56 @@ require 'rack/oauth2'
 require 'securerandom' 
 require 'date' 
 
-require './db_config'
+require './config'
+
+class Profile < Sequel::Model(:profiles)
+  many_to_many :viewers, :left_key=>:profile_id, :right_key=>:viewer_id, :join_table=>:viewer_profiles
+  def initialize(values={})
+    super
+    self.created_at = Time.now.to_i
+  end
+end
 
 class User < Sequel::Model(:users)
-  many_to_many :groups, :left_key=>:user_id, :right_key=>:group_id, :join_table=>:groups_users
+  ROLE = { :admin => 1, :default => 2, :signup => 3, :common => 100 }
+  STATUS = { :created => 1, :activated => 2, :deactivated => 3 }
+  many_to_many :groups, :left_key=>:user_id, :right_key=>:group_id, :join_table=>:group_users
   one_to_many :items
   one_to_many :viewers
-  def initialize(email="", name="", password="")
-    super()
-    self.email = email
-    self.name = name
+  one_to_one :profile, :class=>:Profile
+  def initialize(values={})
+    super
+    self.status = STATUS[:created]
+    self.created_at = Time.now.to_i
+  end
+  
+  def self.create_with_email(email, name, password, role)
+    profile = Profile.find_or_create(:email=>email)
+    return nil if User.find(:profile_id=>profile.id)
+    user = User.new(:profile_id=>profile.id, :name=>name, :role=>role)
+    user.password(password)
+    user.save
+  end
+
+  def self.find_with_email(email)
+    profile = Profile.find(:email=>email)
+    user = User.find(:profile_id=>profile.id) if profile
+  end
+
+  def password(password)
     self.password_salt =SecureRandom.hex 
     self.password_hash = Digest::SHA256.hexdigest(self.password_salt + password)
-    self.status = 0
-    self.created_at = Time.now.to_i
   end
 
   def create_viewer(name, client=nil)
     client = Client.new().save unless client
-    viewer = Viewer.new(name, client, self)
+    viewer = Viewer.new(:name=>name, :client_id=>client.id, :user_id=>self.id)
     self.add_viewer(viewer)
     return viewer
   end
 
   def create_group(name)
-    group = Group.new(name, self).save
+    group = Group.new(:name=>name, :user_id=>self.id).save
     group.add_user(self)
     self.viewers.each do |viewer|
       group.add_viewer(viewer)
@@ -39,18 +64,24 @@ class User < Sequel::Model(:users)
   end
 
   def before_destroy
+    self.items.each do |item|
+      item.require_modification = false
+      item.destroy
+    end
+    self.viewers.each do |viewer|
+      viewer.require_modification = false
+      viewer.destroy
+    end
     self.remove_all_groups
     super
   end
 end
 
 class Group < Sequel::Model(:groups)
-  many_to_many :users, :left_key=>:group_id, :right_key=>:user_id, :join_table=>:groups_users
-  many_to_many :viewers, :left_key=>:group_id, :right_key=>:viewer_id, :join_table=>:groups_viewers
-  def initialize(name, owner_user)
-    super()
-    self.name = name
-    self.user_id = owner_user.id
+  many_to_many :users, :left_key=>:group_id, :right_key=>:user_id, :join_table=>:group_users
+  many_to_many :viewers, :left_key=>:group_id, :right_key=>:viewer_id, :join_table=>:group_viewers
+  def initialize(values={})
+    super
     self.created_at = Time.now.to_i
   end
   def before_destroy
@@ -63,29 +94,20 @@ end
 class Client < Sequel::Model(:clients)
   one_to_one :viewer, :class=>:Viewer # could be nil, if client credintial is used by app user
   def initialize(values={})
-    super()
-    if values[:appid]
-      self.appid = values[:appid]
-    else
-      self.appid = SecureRandom.hex 
-    end
-    if values[:secret]
-      self.secret = values[:secret]
-    else
-      self.secret = SecureRandom.hex 
-    end
+    super
+    self.appid = SecureRandom.hex if not values[:appid]
+    self.secret = SecureRandom.hex  if not values[:secret]
     self.created_at = Time.now.to_i
   end
 end
 
 class Viewer < Sequel::Model(:viewers)
+  STATUS = { :created => 1, :activated => 2, :deactivated => 3 }
   many_to_many :items, :left_key=>:viewer_id, :right_key=>:item_id, :join_table=>:viewer_like_items;
-  def initialize(name, client, user)
-    super()
-    self.name = name
-    self.client_id = client.id
-    self.user_id = user.id
-    self.status = 0
+  many_to_many :profiles, :left_key=>:viewer_id, :right_key=>:profile_id, :join_table=>:viewer_profiles
+  def initialize(values={})
+    super
+    self.status = STATUS[:created]
     self.valid_through = Time.now.to_i + 3600 * 24 * 365
     self.created_at = Time.now.to_i
   end
@@ -96,18 +118,20 @@ class Viewer < Sequel::Model(:viewers)
   def after_destroy
       super
       client = Client.where(:id=>self.client_id).first
-      client.destroy if client
+      if client
+        client.require_modification = false
+        client.destroy
+      end
   end
 end
 
 class Item < Sequel::Model(:items)
+  STATUS = { :initiated => 0, :uploaded => 1, :trashed => 2, :deleted => 3 }
   many_to_many :viewers, :left_key=>:item_id, :right_key=>:viewer_id, :join_table=>:viewer_like_items;
   one_to_many :derivatives
-  def initialize(user, extension)
-    super()
-    self.user_id = user.id
-    self.extension = extension
-    self.status = 0
+  def initialize(values={})
+    super
+    self.status = STATUS[:initiated]
     self.created_at = Time.now.to_i
   end
 
@@ -119,6 +143,7 @@ class Item < Sequel::Model(:items)
 
   def before_destroy
     self.derivatives.each do |derivative|
+      derivative.require_modification = false
       derivative.destroy
     end
     self.remove_all_viewers
@@ -135,13 +160,11 @@ end
 
 
 class Derivative < Sequel::Model(:derivatives)
+  STATUS = { :initiated => 0, :uploaded => 1, :trashed => 2, :deleted => 3 }
   many_to_one :item
-  def initialize(item, extension, name)
-    super()
-    self.item_id = item.id
-    self.extension = extension
-    self.name = name
-    self.status = 0
+  def initialize(values={})
+    super
+    self.status = STATUS[:initiated]
     self.created_at = Time.now.to_i
   end
 
@@ -159,7 +182,8 @@ class Derivative < Sequel::Model(:derivatives)
   end
 end
 
-class AccessToken < Sequel::Model(:access_tokens)
+
+class AccessToken < Sequel::Model(:accesstokens)
 
   def initialize(viewer_or_user)
       super()

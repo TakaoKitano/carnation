@@ -5,12 +5,8 @@ require 'rack/oauth2'
 require './models'
 require './api'
 require './token'
+require './post_upload'
 
-class Hello < Sinatra::Base
-  get '/hello' do
-    "hello carnation"
-  end
-end
 
-run Rack::Cascade.new [Token, Api, Hello]
+run Rack::Cascade.new [Token, Api, PostUpload]
 

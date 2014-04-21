@@ -4,7 +4,7 @@
   window.carnation = window.carnation || {};
   var carnation = window.carnation;
 
-  carnation.get_appuser_token = function (callback) {
+  carnation.get_appuser_token = function (username, password, callback) {
     var access_token, valid_until, now;
 
     now = new Date().getTime();
@@ -31,8 +31,9 @@
 	type: "POST",
 	url: "/token",
 	dataType: "json",
-	data: {grant_type: "password", username: "user1@chikaku.com",  password:"mago"},
-        headers: {Authorization: "Basic MGEwYzliODc2MjJkZWY0ZGE1ODAxZWRkN2UwMTNiNGQ6ZDE1NzJkOGNkNDY5MTM2MzBkZmM1NmY0ODFkYjgxOGI="}
+	data: {grant_type: "password", username: username,  password: password},
+        //base64.b64encode('e3a5cde0f20a94559691364eb5fb8bff:116dd4b3a92a17453df0a5ae83e5e640')
+        headers: {Authorization: "Basic ZTNhNWNkZTBmMjBhOTQ1NTk2OTEzNjRlYjVmYjhiZmY6MTE2ZGQ0YjNhOTJhMTc0NTNkZjBhNWFlODNlNWU2NDA="}
       }).done(function( token ) {
 	var valid_until;
         carnation.access_token = token.access_token;
@@ -60,10 +61,6 @@
     }
   };
 
-  carnation.reset_appuser_token = function (callback) {
-    storage.setItem("carnation.appuser.token.valid_until", 0);
-    carnation.get_appuser_token(callback);
-  }
 
   carnation.get_viewer_token = function (callback) {
     var access_token, valid_until, now;
@@ -91,6 +88,7 @@
 	url: "/token",
 	dataType: "json",
 	data: {locale:"en", grant_type:"client_credentials"},
+        // base64.b64encode('6052d5885f9c2a12c09ef90f815225d3:f6af879a7db8bfbe183e08c1a68e9035')
 	headers: {Authorization:"Basic NjA1MmQ1ODg1ZjljMmExMmMwOWVmOTBmODE1MjI1ZDM6ZjZhZjg3OWE3ZGI4YmZiZTE4M2UwOGMxYTY4ZTkwMzU="}
       }).done(function( token ) {
 	var valid_until;
@@ -133,24 +131,13 @@
     $("#valid_until").text(new Date(parseInt(token.valid_until)))
   }
 
-  $("#reset_token").click( function () {
-    console.log( "reset_token!" );
-    carnation.reset_appuser_token(function(token) {
-      carnation.show_token(token);
-    });
-  });
-
-  $(".carnation_api").submit( function (event) {
-    console.log( "carnation_api" );
-    event.preventDefault();
-    console.log( "token=" + carnation.access_token );
-    var form = $(this);
+  carnation.callapi = function(form) {
     var result_window = window.open("", "result");
     var serialized_form = form.serialize();
     $(form).find('#description').html('');
-    $(form).find('#description').append('method:' + form.attr('method') + '<br/>');
-    $(form).find('#description').append('url:' + form.attr('action') + '<br/>');
-    $(form).find('#description').append('params:' + serialized_form);
+    $(form).find('#description').append(form.attr('method') + '<br/>');
+    $(form).find('#description').append(form.attr('action') + '<br/>');
+    $(form).find('#description').append(serialized_form);
 
     $.ajax({
       url: form.attr('action'),
@@ -167,15 +154,22 @@
         close();
       }
     }).error(function( data ) {
+      console.log("server returns error");
       with(result_window.document)
       {
         open();
-        write("<html><body><pre>");
-        write(JSON.stringify(data, null, "  "));
-        write("</pre></body><html>");
+        write(data.responseText);
         close();
       }
     });
+  }
+
+  $(".carnation_api").submit( function (event) {
+    console.log( "carnation_api" );
+    event.preventDefault();
+    console.log( "token=" + carnation.access_token );
+    var form = $(this);
+    carnation.callapi(form);
   });
 }(window, jQuery));
 

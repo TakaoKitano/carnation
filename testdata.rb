@@ -2,44 +2,23 @@ require './models'
 
 def create_testdata
   #
-  # setup user1
+  # create test user data
   #
-  user = User.new('user1@chikaku.com', 'user1', 'mago').save
+  user = User.create_with_email("test01@chikaku.com", "test01","dx7PnxqDZ5kr", User::ROLE[:common])
 
-  15.times do 
-    item = Item.new(user, ".jpg").save
-    Derivative.new(item, ".jpg", "thumbnail").save
-    Derivative.new(item, ".jpg", "medium").save
+  client = Client.create(:appid=>"6052d5885f9c2a12c09ef90f815225d3",:secret=>"f6af879a7db8bfbe183e08c1a68e9035")
+  user.create_viewer("test01viewer", client)
+  user.create_group("test01group")
+
+  15.times do |n|
+    item = Item.new(:user_id=>user.id, :extension=>".jpg")
+    item.status = Item::STATUS[:uploaded]
+    item.save
+    derivative = Derivative.new(:item_id=>item.id, :extension=>".jpg", :name=>"thumbnail")
+    derivative.status = Item::STATUS[:uploaded]
+    derivative.save
+    derivative = Derivative.new(:item_id=>item.id, :extension=>".jpg", :name=>"medium")
+    derivative.status = Item::STATUS[:uploaded]
+    derivative.save
   end
-  viewer = user.create_viewer("viewer1")
-  group = user.create_group("group1")
-
-
-  #
-  # setup user2
-  #
-  user = User.new('user2@chikaku.com', 'user2', 'mago').save
-
-  15.times do 
-    item = Item.new(user, ".jpg").save
-    Derivative.new(item, ".jpg", "thumbnail").save
-    Derivative.new(item, ".jpg", "medium").save
-  end
-  viewer = user.create_viewer("viewer2")
-  group = user.create_group("group2")
-
-  #
-  # setup user3
-  #
-  user = User.new('user3@chikaku.com', 'user3', 'mago').save
-
-  15.times do 
-    item = Item.new(user, ".jpg").save
-    Derivative.new(item, ".jpg", "thumbnail").save
-    Derivative.new(item, ".jpg", "medium").save
-  end
-
-  viewer = user.create_viewer("viewer3")
-  group = user.create_group("group3")
-
 end

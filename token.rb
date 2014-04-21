@@ -15,7 +15,7 @@ class Token < Sinatra::Base
       #
       # check client credential
       #
-      #p "client_id=" + req.client_id + " client_secret=" + req.client_secret
+      p "client_id=" + req.client_id + " client_secret=" + req.client_secret
       client = Client.where(:appid => req.client_id).first 
       if not client
         p "appid is invalid"
@@ -36,8 +36,8 @@ class Token < Sinatra::Base
         # check username and password
         #
         p "password grant_type token request, id and secret is OK"
-        #p "req.username=" + req.username + " req.password=" + req.password
-        user = User.where(:email => req.username).first || req.invalid_grant!
+        p "req.username=" + req.username + " req.password=" + req.password
+        user = User.find_with_email(req.username) || req.invalid_grant!
  
         if user.password_hash == Digest::SHA256.hexdigest(user.password_salt + req.password)
           access_token = AccessToken.new(user).save
