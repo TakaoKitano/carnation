@@ -83,7 +83,7 @@ bundle exec resque work -c resque/resque.rc
 # reload resque worker process if code is modified
 #
 kill -9 `cat resque/resque.pid`
-bundle exec resque work -c resque/resque.rc
+bundle exec resque work -c resque.rc
 
 #
 # have fun
