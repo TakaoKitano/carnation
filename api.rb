@@ -136,7 +136,12 @@ class Api < Sinatra::Base
       end
       derivatives = []
       item.derivatives.each do |derivative|
-        derivatives << {:id=>derivative.id, :url=>derivative.presigned_url(:get)}
+        derivatives << {:index=>derivative.index, 
+                        :name=>derivative.name, 
+                        :width=>derivative.width, 
+                        :height=>derivative.height, 
+                        :status=>derivative.status, 
+                        :url=>derivative.presigned_url(:get)}
       end
       items << {:id=>item.id, 
                 :status=>item.status, 

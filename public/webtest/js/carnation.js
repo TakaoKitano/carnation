@@ -117,9 +117,12 @@
     }
   }
 
-  carnation.reset_viewer_token = function (callback) {
+  carnation.reset_appuser_token = function () {
+    storage.setItem("carnation.appuser.token.valid_until", 0);
+  }
+
+  carnation.reset_viewer_token = function () {
     storage.setItem("carnation.viewer.token.valid_until", 0);
-    carnation.get_viewer_token(callback);
   }
 
   carnation.show_token = function(token) {

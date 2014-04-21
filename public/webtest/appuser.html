@@ -13,13 +13,17 @@
       scope: <span id="scope"></span><br/>
       token_type: <span id="token_type"></span><br/>
       valid until: <span id="valid_until"></span>
+      <input type="button" value="reset" onclick="reset_token()"><br/>
     </p>
     <form class="get_user_token" action="/token" method="post">
       email:<input type="text" value="test01@chikaku.com" name="email" size="20"/>
       password:<input type="text" value="dx7PnxqDZ5kr" name="password" size="15"/>
-      <input type="reset" value="reset"><br/><input type="submit" value="retrieve access token"><p id="description"/>
+      <input type="submit" value="retrieve access token"><p id="description"/>
     </form>
-    <p id="serialized_form"></p>
+
+    <form action="result.html" method="get" target="result">
+      <input type="submit" value="open result window"/>
+    </form>
 
     <hr/><h4>initiate item upload</h4>
     <form class="carnation_api" action="/api/v1/item/initiate" method="post" id="upload">
@@ -39,7 +43,7 @@
     </form>
 
     <hr/><h4>initiate item upload with browser (test purpose only) </h4>
-    <form action="/api/v1/item/initiate_post" method="post" target="result">
+    <form action="/api/v1/item/initiate_post" method="post" target="upload">
       user_id:<input type="text" name="user_id" size="5"/>
       item_id:<input type="text" name="item_id" size="5"/>
       name:<input type="text" name="name" size="10"/>
@@ -78,6 +82,11 @@
   <script src="js/jquery-2.1.0.js"></script>
   <script src="js/carnation.js"></script>
   <script>
+
+    var reset_token = function() {
+      console.log("reset_token called!!!!!");
+      carnation.reset_appuser_token();
+    }
 
     $(".get_user_token").submit( function (event) {
       console.log( "get user token" );

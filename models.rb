@@ -5,6 +5,10 @@ require 'digest/sha2'
 require 'rack/oauth2'
 require 'securerandom' 
 require 'date' 
+require 'net/https'
+require 'uri'
+require 'open-uri'
+require 'RMagick'
 
 require './config'
 
@@ -156,12 +160,79 @@ class Item < Sequel::Model(:items)
     uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
     uri.to_s
   end
+
+  def self.create_and_upload_derivatives(item_id)
+    p "create_and_upload_derivatives item_id=#{item_id}"
+    item = Item.find(:id=>item_id)
+    return nil if not item
+    presigned_url =  item.presigned_url(:get)
+    open(presigned_url) { |f|
+      image = Magick::Image.from_blob(f.read)
+
+      #
+      # thumbnail image
+      # 
+      thumbnail = image[0].resize_to_fill(100,100)
+      p thumbnail
+      thumbnail.format = "PNG"
+
+      derivative = Derivative.find_or_create(:item_id=>item.id, :index=>2)
+      derivative.extension = ".png"
+      p "path = #{derivative.path}"
+
+      uri = URI::parse(derivative.presigned_url(:put))
+      p "put uri= #{uri.to_s}"
+      https = Net::HTTP.new(uri.host, uri.port)
+      https.use_ssl = true
+
+      request = Net::HTTP::Put.new(uri.request_uri)
+      request.body = thumbnail.to_blob
+      response = https.request(request)
+
+      p response
+      if response.code == "200"
+        derivative.name = "thumbnail"
+        derivative.width = thumbnail.columns
+        derivative.height = thumbnail.rows
+        derivative.status = STATUS[:uploaded]
+        derivative.save
+      end
+
+      #
+      # normalized image
+      # 
+      normal = image[0].resize_to_fit(1920)
+      normal.format = "PNG"
+
+      derivative = Derivative.find_or_create(:item_id=>item.id, :index=>1)
+      derivative.extension = ".png"
+
+      uri = URI::parse(derivative.presigned_url(:put))
+      p "put uri= #{uri.to_s}"
+      https = Net::HTTP.new(uri.host, uri.port)
+      https.use_ssl = true
+
+      request = Net::HTTP::Put.new(uri.request_uri)
+      request.body = normal.to_blob
+      response = https.request(request)
+      p response
+      if response.code == "200"
+        derivative.name = "normal"
+        derivative.width = normal.columns
+        derivative.height = normal.rows
+        derivative.status = STATUS[:uploaded]
+        derivative.save
+      end
+      p "normal image saved"
+    }
+  end
 end
 
 
 class Derivative < Sequel::Model(:derivatives)
   STATUS = { :initiated => 0, :uploaded => 1, :trashed => 2, :deleted => 3 }
   many_to_one :item
+  unrestrict_primary_key
   def initialize(values={})
     super
     self.status = STATUS[:initiated]
@@ -177,7 +248,7 @@ class Derivative < Sequel::Model(:derivatives)
 
   def after_create
     super
-    self.path = self.item.path + "_" + sprintf("%02d", self.id)
+    self.path = self.item.path + "_" + sprintf("%02d", self.index)
     self.save
   end
 end

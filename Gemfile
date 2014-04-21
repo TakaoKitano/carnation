@@ -12,5 +12,5 @@ gem "httpclient"
 gem "activesupport"
 gem "rspec"
 gem 'aws-sdk'
-gem "resque", "~> 2.0.0.pre.1", github: "resque/resque"
 gem "rmagick"
+gem "resque", "~> 2.0.0.pre.1", github: "resque/resque"
