@@ -13,14 +13,14 @@ describe Item do
     item.extension.should == ".jpg"
     item.path.length.should > 8
 
-    derivative = Derivative.new(:item_id=>item.id, :extension=>".png", :name=>"thumbnail")
+    derivative = Derivative.new(:item_id=>item.id, :index=>1, :extension=>".png", :name=>"thumbnail")
     item.add_derivative(derivative)
     derivative.id.should == item.derivatives[0].id
     derivative.item_id == item.id
     derivative.extension.should == ".png"
     derivative.path.length.should > 8
 
-    derivative = Derivative.new(:item_id=>item.id, :extension=>".jpg", :name=>"medium size")
+    derivative = Derivative.new(:item_id=>item.id, :index=>2,:extension=>".jpg", :name=>"medium size")
     item.add_derivative(derivative)
     derivative.id.should == item.derivatives[1].id
     derivative.item_id == item.id

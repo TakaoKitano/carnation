@@ -108,7 +108,10 @@ end
 class Viewer < Sequel::Model(:viewers)
   STATUS = { :created => 1, :activated => 2, :deactivated => 3 }
   many_to_many :items, :left_key=>:viewer_id, :right_key=>:item_id, :join_table=>:viewer_like_items;
+  many_to_many :groups, :left_key=>:viewer_id, :right_key=>:group_id, :join_table=>:group_viewers
   many_to_many :profiles, :left_key=>:viewer_id, :right_key=>:profile_id, :join_table=>:viewer_profiles
+  many_to_one :user
+  many_to_one :client
   def initialize(values={})
     super
     self.status = STATUS[:created]
@@ -127,6 +130,10 @@ class Viewer < Sequel::Model(:viewers)
         client.destroy
       end
   end
+end
+
+class ViewerLikeItem < Sequel::Model(:viewer_like_items)
+  unrestrict_primary_key
 end
 
 class Item < Sequel::Model(:items)
@@ -167,14 +174,13 @@ class Item < Sequel::Model(:items)
     return nil if not item
     presigned_url =  item.presigned_url(:get)
     open(presigned_url) { |f|
-      image = Magick::Image.from_blob(f.read)
+      original = Magick::Image.from_blob(f.read)
 
       #
       # thumbnail image
       # 
-      thumbnail = image[0].resize_to_fill(100,100)
-      p thumbnail
-      thumbnail.format = "PNG"
+      image = original[0].resize_to_fill(100,100)
+      image.format = "PNG"
 
       derivative = Derivative.find_or_create(:item_id=>item.id, :index=>2)
       derivative.extension = ".png"
@@ -186,23 +192,23 @@ class Item < Sequel::Model(:items)
       https.use_ssl = true
 
       request = Net::HTTP::Put.new(uri.request_uri)
-      request.body = thumbnail.to_blob
+      request.body = image.to_blob
       response = https.request(request)
 
       p response
       if response.code == "200"
         derivative.name = "thumbnail"
-        derivative.width = thumbnail.columns
-        derivative.height = thumbnail.rows
+        derivative.width = image.columns
+        derivative.height = image.rows
         derivative.status = STATUS[:uploaded]
         derivative.save
       end
 
       #
-      # normalized image
+      # medium size image
       # 
-      normal = image[0].resize_to_fit(1920)
-      normal.format = "PNG"
+      image = original[0].resize_to_fit(1920)
+      image.format = "PNG"
 
       derivative = Derivative.find_or_create(:item_id=>item.id, :index=>1)
       derivative.extension = ".png"
@@ -213,17 +219,17 @@ class Item < Sequel::Model(:items)
       https.use_ssl = true
 
       request = Net::HTTP::Put.new(uri.request_uri)
-      request.body = normal.to_blob
+      request.body = image.to_blob
       response = https.request(request)
       p response
       if response.code == "200"
-        derivative.name = "normal"
-        derivative.width = normal.columns
-        derivative.height = normal.rows
+        derivative.name = "medium"
+        derivative.width = image.columns
+        derivative.height = image.rows
         derivative.status = STATUS[:uploaded]
         derivative.save
       end
-      p "normal image saved"
+      p "medium image saved"
     }
   end
 end
