@@ -14,10 +14,10 @@ def create_testdata
     item = Item.new(:user_id=>user.id, :extension=>".jpg")
     item.status = Item::STATUS[:uploaded]
     item.save
-    derivative = Derivative.new(:item_id=>item.id, :index=>1, :extension=>".jpg", :name=>"thumbnail")
+    derivative = Derivative.new(:item_id=>item.id, :index=>1, :extension=>".png", :name=>"thumbnail")
     derivative.status = Item::STATUS[:uploaded]
     derivative.save
-    derivative = Derivative.new(:item_id=>item.id, :index=>2, :extension=>".jpg", :name=>"medium")
+    derivative = Derivative.new(:item_id=>item.id, :index=>2, :extension=>".png", :name=>"medium")
     derivative.status = Item::STATUS[:uploaded]
     derivative.save
   end

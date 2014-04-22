@@ -8,5 +8,5 @@ require './token'
 require './post_upload'
 
 
-run Rack::Cascade.new [Token, Api, PostUpload]
+run Rack::Cascade.new [Token, PostUpload, Api]
 

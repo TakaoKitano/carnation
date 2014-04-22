@@ -21,9 +21,12 @@ def create_tables(db)
   db.create_table(:profiles) do
     primary_key :id
     String      :email, :unique=>true, :index=>true
+    String      :name
     String      :lastname
     String      :firstname
-    String      :nickname
+    Integer     :birth_year
+    Integer     :birth_month
+    Integer     :birth_day
     String      :phone_number
     String      :postal_code
     String      :address, :text=>true
@@ -68,6 +71,9 @@ def create_tables(db)
     Integer     :status
     foreign_key :user_id,  :users, :null=>false, :index=>true
     foreign_key :client_id, :clients, :null=>false, :index=>true
+    String      :phone_number
+    String      :postal_code
+    String      :address, :text=>true
     Integer     :valid_through
     Integer     :created_at
   end
@@ -123,6 +129,7 @@ def create_tables(db)
     primary_key [:viewer_id, :item_id]
     index [:viewer_id, :item_id]
     Integer     :count
+    Integer     :updated_at
   end
 
   db.create_table(:accesstokens) do

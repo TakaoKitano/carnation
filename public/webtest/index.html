@@ -1,0 +1,200 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css/pure-min.css">
+<title>carnation webtest</title>
+<script src="js/jquery-2.1.0.js"></script>
+<script src="js/base64.js"></script>
+<script src="js/carnation.js"></script>
+<script>
+$(document).ready(function() {
+
+  var carnation = window.carnation;
+
+  var reset_tokens = function() {
+    carnation.reset_user_token();
+    $("#get_user_token").find("#user_id").text('');
+    $("#get_user_token").find("#token").text('');
+    $("#get_user_token").find("#token_type").text('');
+    $("#get_user_token").find("#scope").text('');
+    $("#get_user_token").find("#valid_until").text('');
+    carnation.reset_viewer_token();
+    $("#get_viewer_token").find("#viewer_id").text('');
+    $("#get_viewer_token").find("#token").text('');
+    $("#get_viewer_token").find("#token_type").text('');
+    $("#get_viewer_token").find("#scope").text('');
+    $("#get_viewer_token").find("#valid_until").text('');
+  }
+
+  $("#get_user_token").submit( function (event) {
+    console.log( "get user token" );
+    event.preventDefault();
+    var email = $(this).find('*[name=email]')[0].value;
+    var password = $(this).find('*[name=password]')[0].value;
+    var form = this;
+
+    carnation.get_user_token(email, password, function(token) {
+      carnation.user_token = token.access_token;
+      $(form).find("#user_id").text(token.user_id)
+      $(form).find("#token").text(token.access_token)
+      $(form).find("#token_type").text(token.token_type)
+      $(form).find("#scope").text(token.scope)
+      $(form).find("#valid_until").text(new Date(parseInt(token.valid_until)))
+      $('*[name="user_id"]').val(token.user_id);
+    });
+  });
+
+  $("#get_viewer_token").submit( function (event) {
+    console.log( "get viewer token" );
+    event.preventDefault();
+    var appid = $(this).find('*[name=appid]')[0].value;
+    var secret = $(this).find('*[name=secret]')[0].value;
+    var form = this;
+
+    console.log("appid=" + appid);
+    console.log("secret=" + secret);
+    var auth = Base64.encode(appid + ":" + secret);
+    carnation.get_viewer_token("Basic " + auth, function(token) {
+      carnation.viewer_token = token.access_token;
+      $(form).find("#viewer_id").text(token.viewer_id)
+      $(form).find("#token").text(token.access_token)
+      $(form).find("#token_type").text(token.token_type)
+      $(form).find("#scope").text(token.scope)
+      $(form).find("#valid_until").text(new Date(parseInt(token.valid_until)))
+      $('*[name="viewer_id"]').val(token.viewer_id);
+    });
+  });
+
+  $(".carnation_api").submit( function (event) {
+    console.log( "carnation_api" );
+    event.preventDefault();
+    var form = $(this);
+    var tokentype = $(form).find("input:checked")[0].value;
+    var token;
+    if (tokentype == "user")
+        token = carnation.user_token;
+    else
+        token = carnation.viewer_token;
+
+    console.log("calling api token=" + token);
+    carnation.callapi(form, token);
+  });
+});
+</script>
+
+</head>
+<body>
+  <h2>carnation api test</h2>
+    <form id="get_user_token" action="/token" method="post">
+      email:<input type="text" value="test01@chikaku.com" name="email" size="20"/>
+      password:<input type="text" value="dx7PnxqDZ5kr" name="password" size="15"/>
+      <br/><input type="submit" value="retrieve user token"><p id="description"/>
+      <p>
+        user_id=<span id="user_id"></span> token=<span id="token"></span><br/>
+        scope=<span id="scope"></span> token_type= <span id="token_type"></span><br/>
+        valid until: <span id="valid_until"></span><br/>
+      </p>
+    </form>
+
+    <form id="get_viewer_token" action="/token" method="post">
+      appid:<input type="text" value="6052d5885f9c2a12c09ef90f815225d3" name="appid" size="40"/>
+      secret:<input type="text" value="f6af879a7db8bfbe183e08c1a68e9035" name="secret" size="40"/>
+      <input type="submit" value="retrieve viewer token"><p id="description"/>
+      <p>
+        viewer_id=<span id="viewer_id"></span> token=<span id="token"></span><br/>
+        scope=<span id="scope"></span> token_type= <span id="token_type"></span><br/>
+        valid until: <span id="valid_until"></span><br/>
+      </p>
+    </form>
+
+    <form action="result.html" method="get" target="result">
+      <input type="button" value="reset tokens" onclick="reset_tokens()">
+      <input type="submit" value="open result window"/>
+    </form>
+
+    <hr/><h4>initiate item upload</h4>
+    <form class="carnation_api" action="/api/v1/item/initiate" method="post" id="upload">
+      user_id:<input type="text" name="user_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
+      name:<input type="text" name="name" size="10"/>
+      width:<input type="number" name="width" size="10"/>
+      height:<input type="number" name="height" size="10"/>
+      extension:<select name="extension">
+        <option value=".jpg">.jpg</option>
+        <option value=".png">.png</option>
+        <option value=".mp4">.mp4</option>
+      </select>
+      <input type="reset" value="reset"><br/>
+      <input type="submit" value="submit">
+      <input type="radio" name="tokentype" value="user" checked>as user</input>
+      <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      <p id="description"/>
+    </form>
+
+    <hr/><h4>initiate item upload with browser (test purpose only) </h4>
+    <form action="/api/v1/item/initiate_post" method="post" target="upload">
+      user_id:<input type="text" name="user_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
+      name:<input type="text" name="name" size="10"/>
+      width:<input type="number" name="width" size="10"/>
+      height:<input type="number" name="height" size="10"/>
+      extension:<select name="extension">
+        <option value=".jpg">.jpg</option>
+        <option value=".png">.png</option>
+        <option value=".mp4">.mp4</option>
+      </select>
+      <input type="reset" value="reset"><br/>
+      <input type="submit" value="submit">
+      <input type="radio" name="tokentype" value="user" checked>as user</input>
+      <input type="radio" name="tokentype" value="viewer">as viewer</input>
+    </form>
+
+    <hr/><h4>notify uploaded</h4>
+    <form class="carnation_api" action="/api/v1/item/uploaded" method="put">
+      user_id:<input type="text" name="user_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
+      valid_after:<input type="text" name="valid_after" size="5"/>
+      <input type="reset" value="reset"><br/><input type="submit" value="submit">
+      <input type="radio" name="tokentype" value="user" checked>as user</input>
+      <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      <p id="description"/>
+    </form>
+
+    <hr/><h4>get_user_images</h4>
+    <form class="carnation_api" action="/api/v1/user/images" method="get">
+      user_id:<input type="text" name="user_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
+      count:<input type="number" name="count" size="2"/>
+      greater_than:<input type="number" name="greater_than" size="1"/>
+      less_than:<input type="number" name="less_than" size="1"/>
+      created_after:<input type="number" name="created_after" size="1"/>
+      created_before:<input type="number" name="created_before" size="1"/>
+      offset:<input type="number" name="offset" size="1"/>
+      <input type="reset" value="reset"><br/><input type="submit" value="submit">
+      <input type="radio" name="tokentype" value="user" checked>as user</input>
+      <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      <p id="description"/>
+    </form>
+
+    <hr/><h4>get users that can be accessed by viewer</h4>
+    <form class="carnation_api" action="/api/v1/viewer/users" method="get">
+      viewer_id:<input type="text" name="viewer_id" size="5"/>
+      <input type="reset" value="reset"><br/><input type="submit" value="submit">
+      <input type="radio" name="tokentype" value="user">as user</input>
+      <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      <p id="description"/>
+    </form>
+
+    <hr/><h4>post viewer likes item</h4>
+    <form class="carnation_api" action="/api/v1/viewer/like" method="post">
+      viewer_id:<input type="text" name="viewer_id" size="5"/>
+      item_id:<input type="text" name="item_id" size="5"/>
+      <input type="reset" value="reset"><br/><input type="submit" value="submit">
+      <input type="radio" name="tokentype" value="user">as user</input>
+      <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      <p id="description"/>
+    </form>
+
+</body>
+</html>
