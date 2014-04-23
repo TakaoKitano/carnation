@@ -20,11 +20,8 @@ class PostUpload < Sinatra::Base
       halt(400, "extension invalid") if extension.index('.') != 0
       item = Item.new(:user_id=>user.id, :extension=>extension)
         item.status = Item::STATUS[:initiated]
-        item.name = params[:name]
-        item.width = params[:width].to_i
-        item.height = params[:height].to_i 
-        item.duration = params[:duration].to_i
-        item.filesize = params[:filesize].to_i
+        item.title = "uploaded by test user"
+        item.description = "with a browser"
       item.save
     end
 
@@ -35,8 +32,13 @@ class PostUpload < Sinatra::Base
       html += %(<input type="hidden" name="#{name}" value="#{value}" />\n)
     end
     html += <<-END
-    <input type="file" name="file"/><br/>
-    <p>"#{item.path+item.extension}"</p>
+    <input type="file" name="file"/>
+    <p>uploading a file: <br/>
+      user name:#{user.name}<br/> 
+      user_id:#{user.id}<br/>
+      item_id:#{item.id}<br/>
+      item_path:S3 bucket/#{item.path+item.extension}
+    </p>
     <input type="submit" name="upload" value="upload"/>
     </form>
     </body></html>

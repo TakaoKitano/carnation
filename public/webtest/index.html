@@ -3,22 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="css/pure-min.css">
+<link rel="stylesheet" href="css/styles.css">
 <title>carnation webtest</title>
 <script src="js/jquery-2.1.0.js"></script>
+<script src="js/jquery.collapse.js"></script>
 <script src="js/base64.js"></script>
 <script src="js/carnation.js"></script>
 <script>
-$(document).ready(function() {
-
   var carnation = window.carnation;
 
   var reset_tokens = function() {
+    reset_user_token();
+    reset_viewer_token();
+  }
+
+  var reset_user_token = function() {
+    console.log( "reset user token" );
     carnation.reset_user_token();
     $("#get_user_token").find("#user_id").text('');
     $("#get_user_token").find("#token").text('');
     $("#get_user_token").find("#token_type").text('');
     $("#get_user_token").find("#scope").text('');
     $("#get_user_token").find("#valid_until").text('');
+  }
+
+  var reset_viewer_token = function(event) {
+    console.log( "reset viewer token" );
     carnation.reset_viewer_token();
     $("#get_viewer_token").find("#viewer_id").text('');
     $("#get_viewer_token").find("#token").text('');
@@ -27,13 +37,9 @@ $(document).ready(function() {
     $("#get_viewer_token").find("#valid_until").text('');
   }
 
-  $("#get_user_token").submit( function (event) {
-    console.log( "get user token" );
-    event.preventDefault();
-    var email = $(this).find('*[name=email]')[0].value;
-    var password = $(this).find('*[name=password]')[0].value;
-    var form = this;
-
+  var get_user_token = function(form) {
+    var email = $(form).find('*[name=email]')[0].value;
+    var password = $(form).find('*[name=password]')[0].value;
     carnation.get_user_token(email, password, function(token) {
       carnation.user_token = token.access_token;
       $(form).find("#user_id").text(token.user_id)
@@ -43,14 +49,11 @@ $(document).ready(function() {
       $(form).find("#valid_until").text(new Date(parseInt(token.valid_until)))
       $('*[name="user_id"]').val(token.user_id);
     });
-  });
+  }
 
-  $("#get_viewer_token").submit( function (event) {
-    console.log( "get viewer token" );
-    event.preventDefault();
-    var appid = $(this).find('*[name=appid]')[0].value;
-    var secret = $(this).find('*[name=secret]')[0].value;
-    var form = this;
+  var get_viewer_token = function(form) {
+    var appid = $(form).find('*[name=appid]')[0].value;
+    var secret = $(form).find('*[name=secret]')[0].value;
 
     console.log("appid=" + appid);
     console.log("secret=" + secret);
@@ -64,6 +67,23 @@ $(document).ready(function() {
       $(form).find("#valid_until").text(new Date(parseInt(token.valid_until)))
       $('*[name="viewer_id"]').val(token.viewer_id);
     });
+  }
+
+$(document).ready(function() {
+
+  get_user_token($('#get_user_token'));
+  get_viewer_token($('#get_viewer_token'));
+
+  $("#get_user_token").submit( function (event) {
+    console.log( "get user token" );
+    event.preventDefault();
+    get_user_token(this);
+  });
+
+  $("#get_viewer_token").submit( function (event) {
+    console.log( "get viewer token" );
+    event.preventDefault();
+    get_viewer_token(this);
   });
 
   $(".carnation_api").submit( function (event) {
@@ -80,121 +100,265 @@ $(document).ready(function() {
     console.log("calling api token=" + token);
     carnation.callapi(form, token);
   });
+
 });
 </script>
 
 </head>
 <body>
-  <h2>carnation api test</h2>
-    <form id="get_user_token" action="/token" method="post">
-      email:<input type="text" value="test01@chikaku.com" name="email" size="20"/>
-      password:<input type="text" value="dx7PnxqDZ5kr" name="password" size="15"/>
-      <br/><input type="submit" value="retrieve user token"><p id="description"/>
-      <p>
-        user_id=<span id="user_id"></span> token=<span id="token"></span><br/>
-        scope=<span id="scope"></span> token_type= <span id="token_type"></span><br/>
-        valid until: <span id="valid_until"></span><br/>
-      </p>
-    </form>
+  <h3>carnation api test</h3>
 
-    <form id="get_viewer_token" action="/token" method="post">
-      appid:<input type="text" value="6052d5885f9c2a12c09ef90f815225d3" name="appid" size="40"/>
-      secret:<input type="text" value="f6af879a7db8bfbe183e08c1a68e9035" name="secret" size="40"/>
-      <input type="submit" value="retrieve viewer token"><p id="description"/>
-      <p>
-        viewer_id=<span id="viewer_id"></span> token=<span id="token"></span><br/>
-        scope=<span id="scope"></span> token_type= <span id="token_type"></span><br/>
-        valid until: <span id="valid_until"></span><br/>
-      </p>
+<div data-collapse>
+    <h4>retrieve access token for user</h4>
+    <form class="pure-form pure-form-aligned" id="get_user_token" action="/token" method="post">
+      <fieldset>
+        <div class="pure-control-group">
+            <label for="email">email</label>
+            <input id="email" type="text" value="test01@chikaku.com" name="email">
+        </div>
+        <div class="pure-control-group">
+            <label for="password">password</label>
+            <input id="password" type="text" value="dx7PnxqDZ5kr" name="password">
+        </div>
+        <ul>
+          <li>user_id=<span id="user_id"></span></li>
+          <li>token=<span id="token"></span></li>
+          <li>scope=<span id="scope"></span></li>
+          <li>token_type=<span id="token_type"></span></li>
+          <li>valid until: <span id="valid_until"></span></li>
+        </ul>
+        <input class="pure-button pure-button-primary" type="submit" value="retrieve user token"/>
+      </fieldset>
     </form>
+</div>
+
+<div data-collapse>
+    <h4>retrieve access token for viewer</h4>
+    <form class="pure-form pure-form-aligned" id="get_viewer_token" action="/token" method="post">
+      <fieldset>
+        <div class="pure-control-group">
+          <label for="appid">appid</label>
+          <input id="appid" type="text" value="6052d5885f9c2a12c09ef90f815225d3" name="appid" size="40"/>
+        </div>
+        <div class="pure-control-group">
+          <label for="secret">secret</label>
+          <input id="secret" type="text" value="f6af879a7db8bfbe183e08c1a68e9035" name="secret" size="40"/>
+        </div>
+        <ul>
+          <li>viewer_id=<span id="viewer_id"></span></li>
+          <li>token=<span id="token"></span></li>
+          <li>scope=<span id="scope"></span></li>
+          <li>token_type= <span id="token_type"></span></li>
+          <li>valid until: <span id="valid_until"></span></li>
+        </ul>
+        <input class="pure-button pure-button-primary" type="submit" value="retrieve viewer token">
+      </fieldset>
+    </form>
+</div>
 
     <form action="result.html" method="get" target="result">
-      <input type="button" value="reset tokens" onclick="reset_tokens()">
-      <input type="submit" value="open result window"/>
+      <input class="pure-button" type="button" value="clear token" onclick="reset_tokens()">
+      <input class="pure-button" type="submit" value="open result window"/>
     </form>
+    <hr/>
 
-    <hr/><h4>initiate item upload</h4>
-    <form class="carnation_api" action="/api/v1/item/initiate" method="post" id="upload">
-      user_id:<input type="text" name="user_id" size="5"/>
-      item_id:<input type="text" name="item_id" size="5"/>
-      name:<input type="text" name="name" size="10"/>
-      width:<input type="number" name="width" size="10"/>
-      height:<input type="number" name="height" size="10"/>
-      extension:<select name="extension">
-        <option value=".jpg">.jpg</option>
-        <option value=".png">.png</option>
-        <option value=".mp4">.mp4</option>
-      </select>
-      <input type="reset" value="reset"><br/>
-      <input type="submit" value="submit">
-      <input type="radio" name="tokentype" value="user" checked>as user</input>
-      <input type="radio" name="tokentype" value="viewer">as viewer</input>
-      <p id="description"/>
-    </form>
+<h3>query user</h3>
 
-    <hr/><h4>initiate item upload with browser (test purpose only) </h4>
-    <form action="/api/v1/item/initiate_post" method="post" target="upload">
-      user_id:<input type="text" name="user_id" size="5"/>
-      item_id:<input type="text" name="item_id" size="5"/>
-      name:<input type="text" name="name" size="10"/>
-      width:<input type="number" name="width" size="10"/>
-      height:<input type="number" name="height" size="10"/>
-      extension:<select name="extension">
-        <option value=".jpg">.jpg</option>
-        <option value=".png">.png</option>
-        <option value=".mp4">.mp4</option>
-      </select>
-      <input type="reset" value="reset"><br/>
-      <input type="submit" value="submit">
-      <input type="radio" name="tokentype" value="user" checked>as user</input>
-      <input type="radio" name="tokentype" value="viewer">as viewer</input>
+<div data-collapse>
+    <h4>get user info</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/user" method="get" id="upload">
+      <fieldset>
+        <div class="pure-control-group">
+          <label>user_id</label> <input type="text" name="user_id"/>
+        </div>
+        <div class="pure-control-group">
+          <label>email</label> <input type="text" name="email"/>
+        </div>
+        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
     </form>
+</div>
 
-    <hr/><h4>notify uploaded</h4>
-    <form class="carnation_api" action="/api/v1/item/uploaded" method="put">
-      user_id:<input type="text" name="user_id" size="5"/>
-      item_id:<input type="text" name="item_id" size="5"/>
-      valid_after:<input type="text" name="valid_after" size="5"/>
-      <input type="reset" value="reset"><br/><input type="submit" value="submit">
-      <input type="radio" name="tokentype" value="user" checked>as user</input>
-      <input type="radio" name="tokentype" value="viewer">as viewer</input>
-      <p id="description"/>
-    </form>
+<h3>upload item</h3>
 
-    <hr/><h4>get_user_images</h4>
-    <form class="carnation_api" action="/api/v1/user/images" method="get">
-      user_id:<input type="text" name="user_id" size="5"/>
-      item_id:<input type="text" name="item_id" size="5"/>
-      count:<input type="number" name="count" size="2"/>
-      greater_than:<input type="number" name="greater_than" size="1"/>
-      less_than:<input type="number" name="less_than" size="1"/>
-      created_after:<input type="number" name="created_after" size="1"/>
-      created_before:<input type="number" name="created_before" size="1"/>
-      offset:<input type="number" name="offset" size="1"/>
-      <input type="reset" value="reset"><br/><input type="submit" value="submit">
-      <input type="radio" name="tokentype" value="user" checked>as user</input>
-      <input type="radio" name="tokentype" value="viewer">as viewer</input>
-      <p id="description"/>
+<div data-collapse>
+    <h4>initiate item upload</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item/initiate" method="post" id="upload">
+      <fieldset>
+        <div class="pure-control-group">
+          <label>user_id(mandatory)</label> <input type="text" name="user_id"/>
+        </div>
+        <div class="pure-control-group">
+          <label>item_id (optional)</label> <input type="text" name="item_id"/>
+        </div>
+        <div class="pure-control-group">
+          <label>title</label> <input type="text" name="title"/>
+        </div>
+        <div class="pure-control-group">
+          <label>description</label> <input type="text" name="description"/>
+        </div>
+        <div class="pure-control-group">
+          <label>width</label> <input type="number" name="width"/>
+        </div>
+        <div class="pure-control-group">
+          <label>height</label> <input type="number" name="height"/>
+        </div>
+        <div class="pure-control-group">
+          <label>extension</label>
+          <select name="extension">
+            <option value=".jpg">.jpg</option>
+            <option value=".png">.png</option>
+            <option value=".mp4">.mp4</option>
+          </select>
+        </div>
+        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
     </form>
+</div>
+<div data-collapse>
+    <h4>initiate item upload with browser (test purpose only) </h4>
+    <form class="pure-form pure-form-aligned" action="/api/v1/item/initiate_post" method="post" target="upload">
+      <fieldset>
+        <div class="pure-control-group">
+          <label>user_id</label><input type="text" name="user_id" />
+        </div>
+        <div class="pure-control-group">
+          <label>item_id</label><input type="text" name="item_id" />
+        </div>
+        <div class="pure-control-group">
+          <label>extension</label>
+          <select name="extension">
+            <option value=".jpg">.jpg</option>
+            <option value=".png">.png</option>
+            <option value=".mp4">.mp4</option>
+          </select>
+        </div>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
 
-    <hr/><h4>get users that can be accessed by viewer</h4>
-    <form class="carnation_api" action="/api/v1/viewer/users" method="get">
-      viewer_id:<input type="text" name="viewer_id" size="5"/>
-      <input type="reset" value="reset"><br/><input type="submit" value="submit">
-      <input type="radio" name="tokentype" value="user">as user</input>
-      <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
-      <p id="description"/>
+<div data-collapse>
+    <h4>notify upload completed</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item/uploaded" method="put">
+      <fieldset>
+        <div class="pure-control-group">
+          <label>item_id</label><input type="text" name="item_id"/>
+        </div>
+        <div class="pure-control-group">
+          <label>valid_after</label><input type="text" name="valid_after"/>
+        </div>
+        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
     </form>
+</div>
 
-    <hr/><h4>post viewer likes item</h4>
-    <form class="carnation_api" action="/api/v1/viewer/like" method="post">
-      viewer_id:<input type="text" name="viewer_id" size="5"/>
-      item_id:<input type="text" name="item_id" size="5"/>
-      <input type="reset" value="reset"><br/><input type="submit" value="submit">
-      <input type="radio" name="tokentype" value="user">as user</input>
-      <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
-      <p id="description"/>
+<h3>get items</h3>
+
+<div data-collapse>
+    <h4>get_user_images</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/user/images" method="get">
+      <fieldset>
+        <div class="pure-control-group">
+          <label>user_id</label><input type="text" name="user_id"/>
+        </div>
+        <div class="pure-control-group">
+          <label>item_id</label><input type="text" name="item_id" />
+        </div>
+        <div class="pure-control-group">
+          <label>count</label><input type="number" name="count" />
+        </div>
+        <div class="pure-control-group">
+          <label>greater_than</label><input type="number" name="greater_than" />
+        </div>
+        <div class="pure-control-group">
+          <label>less_than</label><input type="number" name="less_than" />
+        </div>
+        <div class="pure-control-group">
+          <label>created_after</label><input type="number" name="created_after" />
+        </div>
+        <div class="pure-control-group">
+          <label>created_before</label><input type="number" name="created_before" />
+        </div>
+        <div class="pure-control-group">
+          <label>offset</label><input type="number" name="offset" />
+        </div>
+        <div class="pure-control-group">
+          <label>ignore status</label>
+          <select name="ignore_status">
+            <option value=""></option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+        <div class="pure-control-group">
+          <label>ignore valid_after</label>
+          <select name="ignore_valid_after">
+            <option value=""></option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
     </form>
+</div>
+
+<h3>viewer api</h3>
+
+<div data-collapse>
+    <h4>get users that can be accessed by viewer</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer/users" method="get">
+      <fieldset>
+        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user">as user</input>
+        <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse>
+    <h4>post viewer likes item</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer/like" method="post">
+      <fieldset>
+        <div class="pure-control-group">
+          <label>item_id</label><input type="text" name="item_id"/>
+        </div>
+        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user">as user</input>
+        <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse>
+    <h4>get viewer info</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer" method="get">
+      <fieldset>
+        <div class="pure-control-group">
+          <label>viewer_id</label><input type="text" name="viewer_id"/>
+        </div>
+        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user">as user</input>
+        <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      </fieldset>
+    </form>
+</div>
 
 </body>
 </html>

@@ -4,41 +4,25 @@ def drop_tables(db)
   db.drop_table?:viewer_like_items
   db.drop_table?:items
   db.drop_table?:accesstokens
+  db.drop_table?:profiles
   db.drop_table?:group_viewers
-  db.drop_table?:viewer_profiles
   db.drop_table?:viewers
   db.drop_table?:clients
   db.drop_table?:group_users
   db.drop_table?:groups
   db.drop_table?:users
-  db.drop_table?:profiles
 end
 
 def create_tables(db)
   Sequel::MySQL.default_engine = 'InnoDB'
   Sequel::MySQL.default_charset = 'utf8'
 
-  db.create_table(:profiles) do
-    primary_key :id
-    String      :email, :unique=>true, :index=>true
-    String      :name
-    String      :lastname
-    String      :firstname
-    Integer     :birth_year
-    Integer     :birth_month
-    Integer     :birth_day
-    String      :phone_number
-    String      :postal_code
-    String      :address, :text=>true
-    Integer     :created_at
-  end
 
   db.create_table(:users) do
     primary_key :id
     String      :name
     String      :password_hash
     String      :password_salt
-    foreign_key :profile_id, :profiles, :null=>false, :index=>true
     Integer     :role
     Integer     :status
     Integer     :created_at
@@ -47,6 +31,7 @@ def create_tables(db)
   db.create_table(:groups) do
     primary_key :id
     String      :name
+    String      :description
     foreign_key :user_id, :users, :key=>:id, :null=>false, :index=>true
     Integer     :created_at
   end
@@ -78,26 +63,37 @@ def create_tables(db)
     Integer     :created_at
   end
 
-  db.create_table(:viewer_profiles) do
-    foreign_key :viewer_id, :viewers, :null=>false
-    foreign_key :profile_id, :profiles, :null=>false
-    primary_key [:viewer_id, :profile_id]
-    index [:viewer_id, :profile_id]
+  db.create_table(:profiles) do
+    primary_key :id
+    foreign_key :user_id,     :users,  :null=>true, :index=>true
+    foreign_key :viewer_id,   :viewers,:null=>true, :index=>true
+    String      :email, :unique=>true, :index=>true
+    String      :name
+    String      :lastname
+    String      :firstname
+    Integer     :birth_year
+    Integer     :birth_month
+    Integer     :birth_day
+    String      :phone_number
+    String      :postal_code
+    String      :address, :text=>true
+    Integer     :created_at
   end
 
   db.create_table(:items) do
     primary_key :id
     foreign_key :user_id, :users, :null=>false, :index=>true
-    String      :path       
-    String      :extension # e.g. ".jpg" ".png" or ".mp4"
-    Integer     :status    
-    String      :name,     :null=>true
-    Integer     :width,    :null=>true
-    Integer     :height,   :null=>true
-    Integer     :duration, :null=>true
-    Integer     :filesize, :null=>true
-    Integer     :valid_after
-    Integer     :created_at, :index=>true
+    String      :path,        :null=>false
+    String      :extension,   :null=>false
+    Integer     :status,                    :index=>true    
+    String      :title,       :null=>true
+    String      :description, :null=>true
+    Integer     :width,       :null=>true
+    Integer     :height,      :null=>true
+    Integer     :duration,    :null=>true
+    Integer     :filesize,    :null=>true
+    Integer     :valid_after, :null=>true,  :index=>true
+    Integer     :created_at,  :null=>false, :index=>true
   end
 
   db.create_table(:derivatives) do
@@ -122,7 +118,6 @@ def create_tables(db)
     index [:viewer_id, :group_id]
   end
 
-
   db.create_table(:viewer_like_items) do
     foreign_key :viewer_id, :viewers, :null=>false
     foreign_key :item_id, :items, :null=>false
@@ -131,6 +126,7 @@ def create_tables(db)
     Integer     :count
     Integer     :updated_at
   end
+
 
   db.create_table(:accesstokens) do
     String      :token,       :primary_key=>true

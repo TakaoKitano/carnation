@@ -121,10 +121,9 @@
   carnation.callapi = function(form, token) {
     var result_window = window.open("", "result");
     var serialized_form = form.serialize();
-    $(form).find('#description').html('');
-    $(form).find('#description').append(form.attr('method') + ' ');
-    $(form).find('#description').append(form.attr('action') + '<br/>');
-    $(form).find('#description').append(serialized_form);
+    var description = form.attr('method') + '\n' + form.attr('action') + '\n' + serialized_form;
+    
+    $(form).find('#description').text(description)
 
     $.ajax({
       url: form.attr('action'),
