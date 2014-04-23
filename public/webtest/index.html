@@ -108,9 +108,9 @@ $(document).ready(function() {
 <body>
   <h3>carnation api test</h3>
 
-<div data-collapse>
+<div data-collapse class="api">
     <h4>retrieve access token for user</h4>
-    <form class="pure-form pure-form-aligned" id="get_user_token" action="/token" method="post">
+    <form class="pure-form pure-form-aligned" id="get_user_token" action="/token" method="POST">
       <fieldset>
         <div class="pure-control-group">
             <label for="email">email</label>
@@ -132,9 +132,9 @@ $(document).ready(function() {
     </form>
 </div>
 
-<div data-collapse>
+<div data-collapse class="api">
     <h4>retrieve access token for viewer</h4>
-    <form class="pure-form pure-form-aligned" id="get_viewer_token" action="/token" method="post">
+    <form class="pure-form pure-form-aligned" id="get_viewer_token" action="/token" method="POST">
       <fieldset>
         <div class="pure-control-group">
           <label for="appid">appid</label>
@@ -156,7 +156,7 @@ $(document).ready(function() {
     </form>
 </div>
 
-    <form action="result.html" method="get" target="result">
+    <form action="result.html" method="GET" target="result">
       <input class="pure-button" type="button" value="clear token" onclick="reset_tokens()">
       <input class="pure-button" type="submit" value="open result window"/>
     </form>
@@ -164,17 +164,31 @@ $(document).ready(function() {
 
 <h3>query user</h3>
 
-<div data-collapse>
-    <h4>get user info</h4>
-    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/user" method="get" id="upload">
+<div data-collapse class="api">
+    <h4>get user info - user情報の取得</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/user" method="GET" >
+      <p>userの情報を取得します。存在しない user_id を指定した場合は、404 が返ります。</p>
       <fieldset>
         <div class="pure-control-group">
-          <label>user_id</label> <input type="text" name="user_id"/>
+          <label>user_id(mandatory)</label><input type="text" name="user_id"/>
         </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>get user id by email - email による user id の取得</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/user_by_email" method="GET">
+      <p>user_id を取得します。指定されたemailをもつ user が存在しない場合は、404が返ります。</p>
+      <fieldset>
         <div class="pure-control-group">
-          <label>email</label> <input type="text" name="email"/>
+          <label>email(mandatory)</label><input type="text" name="email" value="test01@chikaku.com"/>
         </div>
-        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
         <input class="pure-button pure-button-primary" type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -184,45 +198,134 @@ $(document).ready(function() {
 
 <h3>upload item</h3>
 
-<div data-collapse>
-    <h4>initiate item upload</h4>
-    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item/initiate" method="post" id="upload">
+<div data-collapse class="api">
+    <h4>post initiate item upload - item upload の開始</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item/initiate" method="POST">
+      <p>item のアップロードを開始します。以前にこの API を呼んで item id を取得済みの場合に、再度 upload 用の url を取得する場合は、item_id を指定してください。(画像を更新したい場合とかに）取得した url に対して、curl でアップロードするさいには次のようにします
+      <pre>
+        curl --upload-file filename url
+      </pre>
+ プログラムからは HTTP PUT でアップロードを行います.アップロードが完了したら、/api/v1/item/uploaded(notify upload completed) を呼んでアップロード完了をサーバーに通知してください.
+      </p>
       <fieldset>
         <div class="pure-control-group">
           <label>user_id(mandatory)</label> <input type="text" name="user_id"/>
         </div>
         <div class="pure-control-group">
-          <label>item_id (optional)</label> <input type="text" name="item_id"/>
+          <label>item_id(optional)</label> <input type="text" name="item_id"/>
         </div>
         <div class="pure-control-group">
-          <label>title</label> <input type="text" name="title"/>
+          <label>title(optional)</label> <input type="text" name="title"/>
         </div>
         <div class="pure-control-group">
-          <label>description</label> <input type="text" name="description"/>
+          <label>description(optional)</label> <input type="text" name="description"/>
         </div>
         <div class="pure-control-group">
-          <label>width</label> <input type="number" name="width"/>
+          <label>width(optional)</label> <input type="number" name="width"/>
         </div>
         <div class="pure-control-group">
-          <label>height</label> <input type="number" name="height"/>
+          <label>height(optional)</label> <input type="number" name="height"/>
         </div>
         <div class="pure-control-group">
-          <label>extension</label>
+          <label>extension(mandatory)</label>
           <select name="extension">
             <option value=".jpg">.jpg</option>
             <option value=".png">.png</option>
             <option value=".mp4">.mp4</option>
           </select>
         </div>
-        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
         <input class="pure-button pure-button-primary" type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
       </fieldset>
     </form>
 </div>
-<div data-collapse>
+
+<div data-collapse class="api">
+    <h4>NOT_YET_IMPLEMENTED:post cancel item upload - initiate したアップロードのキャンセル</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item/cancel" method="POST">
+      <p>item のアップロードをキャンセルします。なんらかの理由で initiate upload を行ったがキャンセルを行う場合に呼んでください。（そうでないとDBにゴミとして item が残る）
+      </p>
+      <fieldset>
+        <div class="pure-control-group">
+          <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>NOT_YET_IMPLEMENTED:delete item - item の削除</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item" method="DELETE">
+      <p>item を削除します。(データとしては残ります。get item にて ignore_status=trueで呼ぶと取得することができます)
+      </p>
+      <fieldset>
+        <div class="pure-control-group">
+          <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>NOT_YET_IMPLEMENTED:undelete item - item の削除のキャンセル</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item/recover" method="POST">
+      <p>削除した item を復活します。
+      </p>
+      <fieldset>
+        <div class="pure-control-group">
+          <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>NOT_YET_IMPLEMENTED:get item - 個別 item の取得</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item" method="GET">
+      <p>item を取得します。(基本 item の取得を行う際は、get user items を呼ぶので不要かも？)
+      </p>
+      <fieldset>
+        <div class="pure-control-group">
+          <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
+        </div>
+        <div class="pure-control-group">
+          <label>ignore status</label>
+          <select name="ignore_status">
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+        <div class="pure-control-group">
+          <label>ignore valid_after</label>
+          <select name="ignore_valid_after">
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input class="pure-button pure-button-primary" type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
     <h4>initiate item upload with browser (test purpose only) </h4>
-    <form class="pure-form pure-form-aligned" action="/api/v1/item/initiate_post" method="post" target="upload">
+    <form class="pure-form pure-form-aligned" action="/api/v1/item/initiate_post" method="POST" target="upload">
       <fieldset>
         <div class="pure-control-group">
           <label>user_id</label><input type="text" name="user_id" />
@@ -244,9 +347,9 @@ $(document).ready(function() {
     </form>
 </div>
 
-<div data-collapse>
-    <h4>notify upload completed</h4>
-    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item/uploaded" method="put">
+<div data-collapse class="api">
+    <h4>put notify upload completed - アップロード完了の通知</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/item/uploaded" method="PUT">
       <fieldset>
         <div class="pure-control-group">
           <label>item_id</label><input type="text" name="item_id"/>
@@ -254,7 +357,7 @@ $(document).ready(function() {
         <div class="pure-control-group">
           <label>valid_after</label><input type="text" name="valid_after"/>
         </div>
-        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
         <input class="pure-button pure-button-primary" type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -264,9 +367,9 @@ $(document).ready(function() {
 
 <h3>get items</h3>
 
-<div data-collapse>
-    <h4>get_user_images</h4>
-    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/user/images" method="get">
+<div data-collapse class="api">
+    <h4>get user items</h4>
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/user/items" method="GET">
       <fieldset>
         <div class="pure-control-group">
           <label>user_id</label><input type="text" name="user_id"/>
@@ -284,16 +387,24 @@ $(document).ready(function() {
           <label>less_than</label><input type="number" name="less_than" />
         </div>
         <div class="pure-control-group">
-          <label>created_after</label><input type="number" name="created_after" />
+          <label>updated_after</label><input type="number" name="updated_after" />
         </div>
         <div class="pure-control-group">
-          <label>created_before</label><input type="number" name="created_before" />
+          <label>updated_before</label><input type="number" name="updated_before" />
         </div>
         <div class="pure-control-group">
           <label>offset</label><input type="number" name="offset" />
         </div>
         <div class="pure-control-group">
-          <label>ignore status</label>
+          <label>order(optional by updated_at default:asc)</label>
+          <select name="order">
+            <option value=""></option> 
+            <option value="asc">asc</option>
+            <option value="desc">desc</option>
+          </select>
+        </div>
+        <div class="pure-control-group">
+          <label>ignore status(optional default:false, always false if viewer)</label>
           <select name="ignore_status">
             <option value=""></option>
             <option value="true">true</option>
@@ -301,14 +412,14 @@ $(document).ready(function() {
           </select>
         </div>
         <div class="pure-control-group">
-          <label>ignore valid_after</label>
+          <label>ignore valid_after(optional default:false, always false if viewer)</label>
           <select name="ignore_valid_after">
             <option value=""></option>
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
         </div>
-        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
         <input class="pure-button pure-button-primary" type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -318,11 +429,11 @@ $(document).ready(function() {
 
 <h3>viewer api</h3>
 
-<div data-collapse>
+<div data-collapse class="api">
     <h4>get users that can be accessed by viewer</h4>
-    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer/users" method="get">
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer/users" method="GET">
       <fieldset>
-        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
         <input class="pure-button pure-button-primary" type="submit" value="submit">
         <input type="radio" name="tokentype" value="user">as user</input>
         <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
@@ -330,14 +441,14 @@ $(document).ready(function() {
     </form>
 </div>
 
-<div data-collapse>
+<div data-collapse class="api">
     <h4>post viewer likes item</h4>
-    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer/like" method="post">
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer/like" method="POST">
       <fieldset>
         <div class="pure-control-group">
           <label>item_id</label><input type="text" name="item_id"/>
         </div>
-        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
         <input class="pure-button pure-button-primary" type="submit" value="submit">
         <input type="radio" name="tokentype" value="user">as user</input>
         <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
@@ -345,14 +456,14 @@ $(document).ready(function() {
     </form>
 </div>
 
-<div data-collapse>
+<div data-collapse class="api">
     <h4>get viewer info</h4>
-    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer" method="get">
+    <form class="carnation_api pure-form pure-form-aligned" action="/api/v1/viewer" method="GET">
       <fieldset>
         <div class="pure-control-group">
           <label>viewer_id</label><input type="text" name="viewer_id"/>
         </div>
-        <textarea id="description" readonly cols="60" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
         <input class="pure-button pure-button-primary" type="submit" value="submit">
         <input type="radio" name="tokentype" value="user">as user</input>
         <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>

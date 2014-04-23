@@ -101,60 +101,76 @@ class User < Sequel::Model(:users)
 
   def create_viewer(name, client=nil)
     client = Client.new().save unless client
-    viewer = Viewer.new(:name=>name, :client_id=>client.id, :user_id=>self.id)
+    viewer = Viewer.create(:name=>name, :client_id=>client.id, :user_id=>self.id)
     self.add_viewer(viewer)
     return viewer
   end
 
   def create_group(name)
-    group = Group.new(:name=>name, :user_id=>self.id).save
-    group.add_user(self)
-    self.viewers.each do |viewer|
-      group.add_viewer(viewer)
-    end
+    group = Group.create(:name=>name, :user_id=>self.id)
+    self.add_group(group)
     return group
   end
 
-  def can_create_item_of(owner)
-    p "owner=" + owner.to_hash.to_s
-    p "self=" + self.to_hash.to_s
-    return false if not owner
-    return true if self.id == owner.id
+  def can_write_to_item_of(user)
+    return false if not user
+    return true if self.id == user.id
     return true if self.role == User::ROLE[:admin]
     return false
   end
 
-  def can_read_item_of(owner)
-    return false if not owner
+  def can_read_item_of(user)
+    return false if not user
 
-    return true if self.id == owner.id
+    return true if self.id == user.id
     return true if self.role == User::ROLE[:admin]
-    return true if owner.role == User::ROLE[:default]
+    return true if user.role == User::ROLE[:default]
     self.groups.each do |g|
       g.users.each do |u|
-        return true if u.id == owner.id
+        return true if u.id == user.id
       end
     end
     return false
   end
 
-  def can_modify(item)
-    return false if not item
-    return true if self.id == item.user_id
-    return true if self.role == User::ROLE[:admin]
-    return false
+  def can_write_to(item)
+    return can_write_to_item_of(User.find(:id=>item.user_id))
   end
 
-  def can_read_info_of(viewer)
-    return false if not viewer
-    return true if self.role == User::ROLE[:admin]
-    self.groups.each do |g|
-      g.viewers.each do |v|
-        return true if v.id == viewer.id
+  def can_read(item)
+    return can_read_item_of(User.find(:id=>item.user_id))
+  end
+
+  def can_read_properties_of(target)
+    return false if not target
+    if target.instance_of? User
+      return true if self.id == target.id            # user equals to onwer
+      return true if self.role == User::ROLE[:admin] # user is admin
+      self.groups.each do |g|
+        g.users.each do |u|
+          return true if u.id == target.id           # the owner belongs to a group user belongs to
+        end
+      end
+    end
+    if target.instance_of? Viewer
+      return true if self.id == target.user_id       # user owns the viewer
+      return true if self.role == User::ROLE[:admin] # user is admin
+      self.groups.each do |g|
+        g.viewers.each do |v|
+          return true if v.id == target.id           # viewer belongs to a group user belongs to
+        end
+      end
+    end
+    if target.instance_of? Group
+      return true if self.id == target.user_id       # user owns the group
+      return true if self.role == User::ROLE[:admin] # user is admin
+      self.groups.each do |g|
+        return true if g.id == target.id             # user belongs to the group
       end
     end
     return false
   end
+
 end
 
 class Group < Sequel::Model(:groups)
@@ -217,9 +233,13 @@ class Viewer < Sequel::Model(:viewers)
     end
   end
 
-  def can_read(item)
-    owner = User.find(:id=>item.user_id)
-    return can_read_item_of(owner)
+  def do_like(item)
+    r = ViewerLikeItem.find_or_create(:viewer_id=>self.id, :item_id=>item.id)
+    return nil if not r
+
+    r.count = 0 if not r.count
+    r.count = r.count + 1
+    r.save
   end
 
   def can_read_item_of(owner)
@@ -233,25 +253,45 @@ class Viewer < Sequel::Model(:viewers)
     return false
   end
 
-  def do_like(item)
-    r = ViewerLikeItem.find_or_create(:viewer_id=>self.id, :item_id=>item.id)
-    return nil if not r
-
-    r.count = 0 if not r.count
-    r.count = r.count + 1
-    r.save
+  def can_read(item)
+    owner = User.find(:id=>item.user_id)
+    return can_read_item_of(owner)
   end
 
-  def can_read_info_of(viewer)
-    return false if not viewer
-    return true if self.id == viewer.id
-    #
-    # REVIEW: should we allow a viewer to get the information 
-    # of another viewer that belongs to the same group ?
-    #
-    self.groups.each do |g|
-      g.viewers.each do |v|
-        return true if v.id == viewer.id
+  def can_read_properties_of(target)
+    if target.instance_of? Viewer
+      viewer = target
+      return false if not viewer
+      return true if self.id == viewer.id
+      #
+      # REVIEW: should we allow a viewer to get the information 
+      # of another viewer that belongs to the same group ?
+      #
+      self.groups.each do |g|
+        g.viewers.each do |v|
+          return true if v.id == viewer.id
+        end
+      end
+    end
+    if target.instance_of? User
+      user = target
+      return false if not user
+      return true if self.user_id == user.id
+      #
+      # REVIEW: should we allow a viewer to get the information 
+      # of another user that belongs to the same group ?
+      #
+      self.groups.each do |g|
+        g.users.each do |u|
+          return true if u.id == user.id
+        end
+      end
+    end
+    if target.instance_of? Group
+      group = target
+      return false if not group
+      self.groups.each do |g|
+        return true if g.id == group.id
       end
     end
     return false
@@ -268,7 +308,7 @@ end
 class ViewerLikeItem < Sequel::Model(:viewer_like_items)
   unrestrict_primary_key
 
-  def after_update
+  def before_update
     self.updated_at = Time.now.to_i
   end
 end
@@ -281,7 +321,12 @@ class Item < Sequel::Model(:items)
     super
     self.status = STATUS[:initiated]
     self.created_at = Time.now.to_i
+    self.updated_at = Time.now.to_i
     self.valid_after = Time.now.to_i + 3600 * 24
+  end
+
+  def before_update
+    self.updated_at = Time.now.to_i
   end
 
   def after_create
