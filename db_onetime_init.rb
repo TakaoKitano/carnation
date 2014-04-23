@@ -94,6 +94,7 @@ def create_tables(db)
     Integer     :filesize,    :null=>true
     Integer     :valid_after, :null=>true,  :index=>true
     Integer     :created_at,  :null=>false, :index=>true
+    Integer     :updated_at,  :null=>false, :index=>true
   end
 
   db.create_table(:derivatives) do
