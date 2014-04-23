@@ -3,36 +3,6 @@ require 'json'
 
 class Api < Sinatra::Base
 
-  helpers do
-    def check_user_resource_availability(owner, user, viewer)
-      return true if (user && user.id == owner.id)
-      owner.groups.each do |group|
-        if user
-          group.users.each do |u|
-            return true if u.id == user.id
-          end
-        end
-        if viewer
-          group.viewers.each do |v|
-            return true if v.id == viewer.id
-          end
-        end
-      end
-      return false
-    end
-
-    def check_item_access(item, viewer)
-      user = User.find(:id=>item.user_id)
-      return false if not user
-      user.groups.each do |group|
-        group.viewers.each do |v|
-          return true if v.id == viewer.id
-        end
-      end
-      return false
-    end
-  end
-
   configure :development do 
     Bundler.require :development 
     register Sinatra::Reloader 
@@ -65,17 +35,38 @@ class Api < Sinatra::Base
     halt(400, "no access token") if not @token
   end
 
+  get '/api/v1/user' do
+    user = User.find(:id=>@token.user_id) if @token.user_id
+    viewer = Viewer.find(:id=>@token.viewer_id) if @token.viewer_id
+    halt(400, "no valid token") if not user and not viewer
+
+    if params[:user_id].length > 0
+      target = User.find(:id=>params[:user_id]) 
+      profile = Profile.find(:id=>target.profile_id) if target
+    elsif params[:email].length > 0
+      profile = Profile.find(:email=>params[:email]) 
+      target = User.find(:profile_id=>profile.id) if profile
+    end
+    halt(404, "no such user") if not target
+    @result[:user_id] = target.id
+    @result[:name] = target.name
+    @result[:role] = target.role
+    @result[:status] = target.status
+    @result[:profile] = profile.to_hash
+    JSON.generate(@result)
+  end
+
   post '/api/v1/item/initiate' do
 
-    user_id = params[:user_id].to_i
+    owner = User.find(:id=>params[:user_id])
+    halt(400, "user_id invalid") if not owner
+
+    user = User.find(:id=>@token.user_id)
+    halt(400, "invalid token") if not user
+    halt(400, "access denied") if not user.can_create_item_of owner
+
     item_id = params[:item_id].to_i
     extension = params[:extension] 
-
-    user = User.find(:id=>user_id)
-    halt(400, "user_id invalid") if not user
-
-    caller_user_id = @token.user_id
-    halt(400, "user_id unmatch") if user_id != caller_user_id
 
     if item_id > 0 
       item = Item.find(:id=>item_id)
@@ -83,9 +74,10 @@ class Api < Sinatra::Base
     else 
       halt(400, "extension required") if not extension
       halt(400, "extension invalid") if extension.index('.') != 0
-      item = Item.new(:user_id=>user.id, :extension=>extension)
+      item = Item.new(:user_id=>owner.id, :extension=>extension)
         item.status = Item::STATUS[:initiated]
-        item.name = params[:name]
+        item.title = params[:title]
+        item.description = params[:description]
         item.width = params[:width].to_i
         item.height = params[:height].to_i 
         item.duration = params[:duration].to_i
@@ -101,26 +93,24 @@ class Api < Sinatra::Base
 
   put '/api/v1/item/uploaded' do
 
-    user_id = params[:user_id].to_i
-    item_id = params[:item_id].to_i
+    user = User.find(:id=>@token.user_id)
+    halt(400, "invalid token") if not user
 
-    user = User.where(:id=>user_id).first 
-    halt(400, "user_id invalid") if not user
-
-    item = Item.where(:id=>item_id).first 
-    halt(400, "item_id invalid") if not item 
-    halt(400, "user_id invalid") if item.user_id != user_id
+    item = Item.find(:id=>params[:item_id])
+    halt(400, "item not found") if not item 
+    halt(400, "access denied") if not user.can_modify item
 
     valid_after = params["valid_after"].to_i
-    valid_after = 300 if valid_after <= 0
+    valid_after = 0 if valid_after <= 0
 
     item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
     item.status = Item::STATUS[:uploaded]
     item.save
 
-    p "item saved"
+    p "item saved, registering a worker job for item:#{item.id}"
     require 'resque_workers'
     Resque.enqueue(CreateDerivatives, :item_id=>item.id)
+
     @result[:item_id] = item.id
     @result[:status] = item.status
     @result[:path] = item.path
@@ -136,11 +126,29 @@ class Api < Sinatra::Base
     user = User.find(:id=>@token.user_id) if @token.user_id
     viewer = Viewer.find(:id=>@token.viewer_id) if @token.viewer_id
     owner = User.find(:id=>params[:user_id])
-
     halt(400, "user_id invalid") if not owner
-    halt(400, "no accesss grant") if not check_user_resource_availability(owner, user, viewer)
+    if user
+      halt(400, "no accesss grant") if not user.can_read_item_of owner
+    end
+    if viewer
+      halt(400, "no accesss grant") if not viewer.can_read_item_of owner
+    end
 
     ds = Item.where(:user_id => owner.id)
+
+    ignore_status = (params[:ignore_status] == "true")
+    ignore_valid_after = (params[:ignore_valid_after] == "true")
+    if viewer
+      ignore_status = false
+      ignore_valid_after = false
+    end
+    if not ignore_status
+      ds = ds.where('status = ?', Item::STATUS[:uploaded])
+    end
+    if not ignore_valid_after
+      ds = ds.where('valid_after < ?', Time.now.to_i)
+    end
+
     item_id = params[:item_id].to_i
     if item_id > 0
       ds = ds.where(:id=>item_id)
@@ -171,6 +179,7 @@ class Api < Sinatra::Base
       ds = ds.order_by(:created_at)
     end
 
+
     items = []
     ds.all.each do |item|
 
@@ -181,71 +190,86 @@ class Api < Sinatra::Base
 
       derivatives = []
       item.derivatives.each do |derivative|
-        if derivative.status == Derivative::STATUS[:uploaded]
-          derivatives << {:index=>derivative.index, 
-                          :name=>derivative.name, 
-                          :width=>derivative.width, 
-                          :height=>derivative.height, 
-                          :status=>derivative.status, 
-                          :url=>derivative.presigned_url(:get)}
-        end
+        derivatives << {:index=>derivative.index, 
+                        :name=>derivative.name, 
+                        :width=>derivative.width, 
+                        :height=>derivative.height, 
+                        :status=>derivative.status, 
+                        :url=>derivative.presigned_url(:get)}
       end
-      if item.status == Derivative::STATUS[:uploaded]
-        items << {:id=>item.id, 
-                  :status=>item.status, 
-                  :created_at=>item.created_at, 
-                  :valid_after=>item.valid_after, 
-                  :url=>item.presigned_url(:get), 
-                  :liked_by=>liked_by, 
-                  :derivatives=>derivatives}
-      end
+      items << {:id=>item.id, 
+                :status=>item.status, 
+                :created_at=>item.created_at, 
+                :valid_after=>item.valid_after, 
+                :url=>item.presigned_url(:get), 
+                :liked_by=>liked_by, 
+                :derivatives=>derivatives}
     end
 
     @result[:user_id] = owner.id
+    @result[:count] = items.length
     @result[:items] = items
     JSON.generate(@result)
   end
 
   get '/api/v1/viewer/users' do
-    viewer = Viewer.find(:id=>params[:viewer_id])
-    halt(400, "invalid viewer_id") if not viewer
-    halt(400, "viewer_id unmatch") if @token.viewer_id != viewer.id
+    viewer = Viewer.find(:id=>@token.viewer_id) if @token.viewer_id
+    halt(400, "invalid token") if not viewer
 
     users = []
     viewer.groups.each do |group|
       group.users.each do |user|
-        users << {:user_id=>user.id}
+        users << {:user_id=>user.id, :name=>user.name}
       end  
     end
+    @result[:viewer_id] = viewer.id
     @result[:users] = users
     JSON.generate(@result)
   end
 
   post '/api/v1/viewer/like' do
-    item = Item.find(:id=>params[:item_id])
-    halt(400, "invalid item_id") if not item
+    viewer = Viewer.find(:id=>@token.viewer_id) if @token.viewer_id
+    halt(400, "invalid token") if not viewer
 
-    viewer = Viewer.find(:id=>params[:viewer_id])
-    halt(400, "invalid viewer_id") if not viewer
+    item_id = params[:item_id].to_i
+    item = Item.find(:id=>item_id) if item_id > 0
+    halt(400, "item not found") if not item
+    halt(400, "access denied") if not viewer.can_read item 
 
-    halt(400, "viewer_id unmatch") if @token.viewer_id != viewer.id
-    halt(400, "no access grant") if not check_item_access(item, viewer)
+    r = viewer.do_like(item)
+    halt(500, "db error") if not r
 
-    r = ViewerLikeItem.find_or_create(:viewer_id=>viewer.id, :item_id=>item.id)
-    r.count = 0 if not r.count
-    r.count = r.count + 1
-    r.updated_at = Time.now.to_i
-    r.save
-
-    @result[:item_id] = item.id
     @result[:viewer_id] = viewer.id
+    @result[:item_id] = item.id
     @result[:count] = r.count
+    @result[:updated_at] = r.updated_at
+    JSON.generate(@result)
+  end
+
+  get '/api/v1/viewer' do
+    viewer_id = params[:viewer_id].to_i
+    target = Viewer.find(:id=>viewer_id) if viewer_id > 0
+    halt(404, "viewer not found") if not target
+
+    if @token.viewer_id 
+      viewer = Viewer.find(:id=>@token.viewer_id)
+      halt(400, "token invalid") if not viewer
+      halt(400, "access denied") if not viewer.can_read_info_of target
+    end
+
+    if @token.user_id 
+      user = User.find(:id=>@token.user_id)
+      halt(400, "token incalid") if not user
+      halt(400, "access denied") if not user.can_read_info_of target
+    end
+
+    @result = target.to_hash
+    @result[:profiles] = target.profiles.map{|p| p.to_hash}
+
     JSON.generate(@result)
   end
 
   get '/api/*' do
-    token = request.env[Rack::OAuth2::Server::Resource::ACCESS_TOKEN]
-    p "access_token:", token if token
-    "get api request"
+    halt 404,"no such api"
   end
 end
