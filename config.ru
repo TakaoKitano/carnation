@@ -6,6 +6,7 @@ require './models'
 require './api'
 require './token'
 require './post_upload'
+require './webtest'
 
-run Rack::Cascade.new [Token, PostUpload, Api]
+run Rack::Cascade.new [Webtest, Token, PostUpload, Api]
 
