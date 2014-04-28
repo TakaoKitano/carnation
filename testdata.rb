@@ -4,7 +4,7 @@ def create_testdata
   #
   # create test user data
   #
-  user = User.create_with_email("test01@chikaku.com", "test01","dx7PnxqDZ5kr", User::ROLE[:common])
+  user = User.create(:email=>"test01@chikaku.com", :name=>"test01",:password=>"dx7PnxqDZ5kr", :role=>User::ROLE[:common])
 
   client = Client.create(:appid=>"6052d5885f9c2a12c09ef90f815225d3",:secret=>"f6af879a7db8bfbe183e08c1a68e9035")
   viewer = user.create_viewer("test01viewer", client)
