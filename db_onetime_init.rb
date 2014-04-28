@@ -17,15 +17,23 @@ def create_tables(db)
   Sequel::MySQL.default_engine = 'InnoDB'
   Sequel::MySQL.default_charset = 'utf8'
 
-
   db.create_table(:users) do
     primary_key :id
-    String      :name
+    String      :email, :null=>false, :unique=>true, :index=>true
     String      :password_hash
     String      :password_salt
+    String      :name
     Integer     :role
     Integer     :status
     Integer     :created_at
+    String      :lastname
+    String      :firstname
+    Integer     :birth_year
+    Integer     :birth_month
+    Integer     :birth_day
+    String      :phone_number
+    String      :postal_code
+    String      :address, :text=>true
   end
 
   db.create_table(:groups) do
@@ -65,9 +73,8 @@ def create_tables(db)
 
   db.create_table(:profiles) do
     primary_key :id
-    foreign_key :user_id,     :users,  :null=>true, :index=>true
     foreign_key :viewer_id,   :viewers,:null=>true, :index=>true
-    String      :email, :unique=>true, :index=>true
+    String      :email, :index=>true
     String      :name
     String      :lastname
     String      :firstname
@@ -145,15 +152,31 @@ def create_builtin_users
   #
   # create built-in users
   #
-  User.create_with_email("admin@chikaku.com",  "__admin__", "Zh1lINR0H1sw", User::ROLE[:admin])
-  User.create_with_email("signup@chikaku.com", "__signup__","9TseZTFYR1ol", User::ROLE[:signup])
-  User.create_with_email("default@chikaku.com", "__default__","6y6bSoTwmKIO", User::ROLE[:default])
+  User.new { |u|
+    u.email = "admin@chikaku.com"  
+    u.name = "__admin__"
+    u.password= "Zh1lINR0H1sw"
+    u.role = User::ROLE[:admin]
+  }.save
+
+  User.new { |u| 
+   u.email = "signup@chikaku.com"
+   u.name = "__signup__"
+   u.password= "9TseZTFYR1ol"
+   u.role = User::ROLE[:signup]
+  }.save
+
+  User.new { |u|
+    u.email = "default@chikaku.com"
+    u.name = "__default__"
+    u.password= "6y6bSoTwmKIO"
+    u.role = User::ROLE[:default]
+  }.save
 
   #
   # client credential used only by admin user
   #
   Client.create(:appid=>'0a0c9b87622def4da5801edd7e013b4d',:secret=>'d1572d8cd46913630dfc56f481db818b')
-
   #
   # client credentials used by applications (please use one of them)
   #

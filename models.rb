@@ -21,6 +21,7 @@ class User < Sequel::Model(:users)
   one_to_one :profile
   def initialize(values={})
     super
+    self.role = values[:role] || ROLE[:common] 
     self.status = STATUS[:created]
     self.created_at = Time.now.to_i
   end
@@ -64,43 +65,20 @@ class User < Sequel::Model(:users)
       accestoken.destroy
     end
 
-    #
-    # delete profile of this user
-    #
-    if profile
-      profile.require_modification = false
-      profile.destroy
-    end
     super
   end
   
   def after_destroy
     super
   end
-  
-  def self.create_with_email(email, name, password, role)
-    profile = Profile.find_or_create(:email=>email)
-    return nil if profile.user_id  # email is already used by other user
-    user = User.new(:name=>name, :role=>role)
-    user.password(password)
-    user.save
-    profile.user_id = user.id
-    profile.save
-    return user
-  end
 
-  def self.find_with_email(email)
-    profile = Profile.find(:email=>email)
-    user = User.find(:id=>profile.user_id) if profile
-  end
-
-  def password(password)
+  def password=(password)
     self.password_salt =SecureRandom.hex 
     self.password_hash = Digest::SHA256.hexdigest(self.password_salt + password)
   end
 
   def create_viewer(name, client=nil)
-    client = Client.new().save unless client
+    client = Client.create() unless client
     viewer = Viewer.create(:name=>name, :client_id=>client.id, :user_id=>self.id)
     self.add_viewer(viewer)
     return viewer

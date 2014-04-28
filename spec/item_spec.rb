@@ -2,7 +2,9 @@ require './models'
 describe Item do
 
   before do
-    @user = User.create_with_email("testtest@chikaku.com", "test", "magomago", User::ROLE[:common])
+    user = User.find(:email=>"testtest@chikaku.com")
+    user.destroy if user
+    @user = User.create(:email=>"testtest@chikaku.com")
   end
 
   it "can create an item" do
