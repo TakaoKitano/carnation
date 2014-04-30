@@ -25,7 +25,7 @@ class Webtest < Sinatra::Base
   
   get '/webtest/*' do
     protected!
-    send_file File.join(File.expand_path(File.dirname(__FILE__)), request.path_info)
+    send_file File.join(File.expand_path(File.dirname(__FILE__)), '..', request.path_info)
   end
 
 
