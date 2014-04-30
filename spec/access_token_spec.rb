@@ -1,7 +1,5 @@
-#
-# access_token tests
-#
-require './models'
+require File.dirname(__FILE__) + '/spec_helper'
+require 'models'
 
 describe AccessToken do
 

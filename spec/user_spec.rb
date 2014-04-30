@@ -1,7 +1,5 @@
-#
-# check the result of migrate/create_testdata.rb
-#
-require './models'
+require File.dirname(__FILE__) + '/spec_helper'
+require 'models'
 
 describe User do
 

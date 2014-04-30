@@ -1,7 +1,10 @@
+require 'sinatra/base'
+require 'rack/oauth2'
+require 'models'
 require 'date'
 require 'json'
 
-class Api < Sinatra::Base
+class Carnation < Sinatra::Base
 
   configure :development do 
     Bundler.require :development 
@@ -41,7 +44,6 @@ class Api < Sinatra::Base
   get '/api/v1/user' do
 
     target = User.find(:id=>params[:user_id]) 
-    profile = target.profile if target
     halt(404, "user not found") unless target
 
     user = User.find(:id=>@token.user_id) if @token.user_id
@@ -55,13 +57,13 @@ class Api < Sinatra::Base
     halt(400, "token invalid") unless user or viewer
 
     @result[:user_id] = target.id
+    @result[:email] = target.email
     @result[:name] = target.name
     @result[:role] = target.role
     @result[:status] = target.status
     @result[:viewers] = target.viewers.map {|v| v.to_hash}
     @result[:groups] = Group.where(:user_id=>target.id).all.map {|g| g.to_hash}
     @result[:belong_to_groups] = target.groups.map {|g| g.to_hash}
-    @result[:profile] = profile.to_hash
     JSON.generate(@result)
   end
 
@@ -70,8 +72,7 @@ class Api < Sinatra::Base
   #
   get '/api/v1/user_by_email' do
 
-    profile = Profile.find(:email=>params[:email]) 
-    user = User.find(:id=>profile.user_id) if profile
+    user = User.find(:email=>params[:email])
     halt(404, "user not found") unless user
 
     @result[:user_id] = user.id

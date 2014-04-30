@@ -1,4 +1,4 @@
-require './models'
+require 'models'
 
 def create_testdata
   #
