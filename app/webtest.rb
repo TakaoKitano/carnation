@@ -1,7 +1,7 @@
-require 'sinatra'
+require 'sinatra/base'
 require 'resque'
 require 'redis'
-require './config.rb'
+require 'config.rb'
 
 class Webtest < Sinatra::Base
   configure :development do 

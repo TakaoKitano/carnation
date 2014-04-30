@@ -1,6 +1,8 @@
 # carnation api server
 
-# open http://54.238.176.142:9292/webtest/index.html kenken/magomago
+## webtest
+
+http://54.238.176.142:9292/webtest/index.html kenken/magomago
 
 ## server setup
 
@@ -10,19 +12,28 @@ ubuntu 12.04 LTS server
 
 ### make sure to take the latest
 
+<pre>
 sudo apt-get -y update
+</pre>
 
 ### basic stuff
+
+<pre>
 sudo apt-get -y install wget curl git pkg-config
+</pre>
 
 ### redis for resque worker
 
+<pre>
 sudo apt-get -y install redis-server
+</pre>
 
 ### for rmagick
 
+<pre>
 sudo apt-get -y install imagemagick
 sudo apt-get -y install libmagickwand-dev
+</pre>
 
 ### ruby2.1
 
@@ -40,18 +51,28 @@ sudo make install
 
 ### mysql (server will not be used, but for now it's needed)
 
+<pre>
 sudo apt-get install -y libmysqlclient-dev mysql-client-5.5
 sudo apt-get install -y mysql-server-5.5
+</pre>
 
-### have fun!
+### setup 
 
-- git clone git@github.com:kajiwara321/magoch_server.git
-- sudo gem install bundler
-- cd magoch_server && bundle install --path vendor/bundle
-- mysql -u root <initialize_database.sql
-- bundle exec ruby dbinit.rb
-- bundle exec resque work -c resque/resque.rc &
-- bundle exec rackup
+<pre>
+$ git clone git@github.com:kajiwara321/magoch_server.git
+$ sudo gem install bundler
+$ cd magoch_server && bundle install --path vendor/bundle
+$ mysql -u root <initialize_database.sql
+$ rake dbinit
+$ rake test
+</pre>
+
+### run server
+
+<pre>
+$ rake resque:start
+$ rake rackup
+</pre>
 
 
 

@@ -1,4 +1,5 @@
-require './models'
+require File.dirname(__FILE__) + '/spec_helper'
+require 'models'
 describe Item do
 
   before do

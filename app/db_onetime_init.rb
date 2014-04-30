@@ -1,3 +1,4 @@
+require 'config.rb'
 
 def drop_tables(db)
   db.drop_table?:derivatives
@@ -147,31 +148,22 @@ def create_tables(db)
 
 end
 
-require './models'
+require 'models'
 def create_builtin_users
   #
   # create built-in users
   #
-  User.new { |u|
-    u.email = "admin@chikaku.com"  
-    u.name = "__admin__"
-    u.password= "Zh1lINR0H1sw"
-    u.role = User::ROLE[:admin]
-  }.save
+  u = User.new(:email=>"admin@chikaku.com", :name=>"__admin__", :role=>User::ROLE[:admin])
+  u.password= "Zh1lINR0H1sw"
+  u.save
 
-  User.new { |u| 
-   u.email = "signup@chikaku.com"
-   u.name = "__signup__"
-   u.password= "9TseZTFYR1ol"
-   u.role = User::ROLE[:signup]
-  }.save
+  u = User.new(:email=>"signup@chikaku.com", :name =>"__signup__", :role =>User::ROLE[:signup])
+  u.password= "9TseZTFYR1ol"
+  u.save
 
-  User.new { |u|
-    u.email = "default@chikaku.com"
-    u.name = "__default__"
-    u.password= "6y6bSoTwmKIO"
-    u.role = User::ROLE[:default]
-  }.save
+  u = User.new(:email=>"default@chikaku.com", :name=>"__default__",  :role=>User::ROLE[:default])
+  u.password= "6y6bSoTwmKIO"
+  u.save
 
   #
   # client credential used only by admin user

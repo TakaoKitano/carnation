@@ -1,3 +1,5 @@
+require 'sinatra/base'
+require 'models'
 
 class PostUpload < Sinatra::Base
   configure :development do 

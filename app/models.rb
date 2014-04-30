@@ -10,7 +10,7 @@ require 'uri'
 require 'open-uri'
 require 'RMagick'
 
-require './config'
+require 'config.rb'
 
 class User < Sequel::Model(:users)
   ROLE = { :admin => 1, :default => 2, :signup => 3, :common => 100 }
