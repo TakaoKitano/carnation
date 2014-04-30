@@ -1,0 +1,7 @@
+queues: 'default'
+require: 'resque_workers.rb'
+pid_file: 'resque/resque.pid'
+interval: 5
+daemon: true
+timeout: 30
+graceful_term: false
