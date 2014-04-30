@@ -1,6 +1,6 @@
 desc 'database one time initialization'
 task :dbinit do
-  #system 'mysql -u root -p <migrate/initialize_database.sql'
+  system 'mysql -u root -p <migrate/initialize_database.sql'
   system 'bundle exec ruby migrate/dbinit.rb'
 end
 
