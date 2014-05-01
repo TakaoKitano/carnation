@@ -64,7 +64,7 @@ $ sudo gem install bundler
 $ cd magoch_server && bundle install --path vendor/bundle
 $ mysql -u root <initialize_database.sql
 $ rake dbinit
-$ rake test
+$ rake spec
 </pre>
 
 ### run server
