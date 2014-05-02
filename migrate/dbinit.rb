@@ -1,13 +1,9 @@
-$LOAD_PATH.unshift('./lib') unless $LOAD_PATH.include?('./lib')
-$LOAD_PATH.unshift('./app') unless $LOAD_PATH.include?('./app')
-$LOAD_PATH.unshift('.') unless $LOAD_PATH.include?('.')
-require 'db_onetime_init.rb'
+$LOAD_PATH.unshift File.join(File.expand_path(File.dirname(__FILE__)), '../lib')
+$LOAD_PATH.unshift File.join(File.expand_path(File.dirname(__FILE__)), '../app')
+require 'database_schema.rb'
 puts "drop tables..."
 drop_tables($DB)
 puts "creating tables..."
 create_tables($DB)
 puts "creating builtin users..."
 create_builtin_users
-puts "creating test data"
-require 'testdata'
-create_testdata

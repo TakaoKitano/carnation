@@ -9,7 +9,7 @@ class Carnation < Sinatra::Base
   configure :development do 
     Bundler.require :development 
     register Sinatra::Reloader 
-    also_reload './models.rb'
+    also_reload 'app/models.rb'
     p "Sinatra::Reloader registered"
   end 
 
@@ -56,7 +56,7 @@ class Carnation < Sinatra::Base
     end
     halt(400, "token invalid") unless user or viewer
 
-    @result[:user_id] = target.id
+    @result[:id] = target.id
     @result[:email] = target.email
     @result[:name] = target.name
     @result[:role] = target.role
@@ -97,6 +97,8 @@ class Carnation < Sinatra::Base
     if item_id > 0 
       item = Item.find(:id=>item_id)
       halt(400, "item_id invalid") unless item
+      halt(400, "access denied") unless owner.id == item.user_id
+      halt(400, "access denied") unless user.can_write_to_item_of(owner)
     else 
       halt(400, "extension required") unless extension
       halt(400, "extension invalid") unless extension.index('.') == 0
@@ -118,9 +120,124 @@ class Carnation < Sinatra::Base
   end
 
   #
-  # notify item upload completed
+  # initiate upload item with browser
   #
-  put '/api/v1/item/uploaded' do
+  post '/api/v1/item/initiate_post' do
+    owner = User.find(:id=>params[:user_id])
+    halt(400, "user_id invalid") unless owner
+
+    user = User.find(:id=>@token.user_id)
+    halt(400, "invalid token") unless user
+    halt(400, "access denied") unless user.can_write_to_item_of owner
+
+    item_id = params[:item_id].to_i
+    extension = params[:extension] 
+
+    if item_id > 0 
+      item = Item.find(:id=>item_id)
+      halt(400, "item_id invalid") unless item
+      halt(400, "access denied") unless owner.id == item.user_id
+      halt(400, "access denied") unless user.can_write_to_item_of(owner)
+    else 
+      halt(400, "extension required") unless extension
+      halt(400, "extension invalid") if extension.index('.') != 0
+      item = Item.new(:user_id=>owner.id, :extension=>extension)
+        item.status = Item::STATUS[:initiated]
+      item.save
+    end
+
+    form = $bucket.presigned_post(:key => item.path+item.extension)
+    require 'erb'
+    html = <<-POSTHTML
+      <html>
+        <body>
+          <form action=#{form.url} method='post' enctype='multipart/form-data'>
+          <% form.fields.map do |(name, value)| %>
+           <input type="hidden" name="<%=name%>" value="<%=value%>"/>
+          <% end %>
+          <input type="file" name="file"/>
+          <p>uploading a file: <br/>
+            user name:#{owner.name}<br/> 
+            user_id:#{owner.id}<br/>
+            item_id:#{item.id}<br/>
+            item_path:S3 bucket/#{item.path+item.extension}
+          </p>
+          <input type="submit" name="upload" value="upload"/>
+          </form>
+        </body>
+      </html>
+    POSTHTML
+    response['Content-Type'] = 'text/html'
+    erb = ERB.new(html)
+    erb.result(binding)
+  end
+
+  #
+  # delete item
+  #
+  delete '/api/v1/item' do
+
+    user = User.find(:id=>@token.user_id)
+    halt(400, "invalid token") unless user
+
+    item_id = params[:item_id].to_i
+    item = Item.find(:id=>item_id)
+    halt(400, "item_id invalid") unless item
+    halt(400, "access denied") unless user.can_write_to(item)
+
+    if item.status == Item::STATUS[:initiated] 
+      item.destroy
+    else
+      item.status = Item::STATUS[:deleted]
+      item.save
+    end
+    @result[:id] = item.id
+    @result[:status] = item.status
+    JSON.generate(@result)
+  end
+
+  #
+  # get item
+  #
+  get '/api/v1/item' do
+
+    user = User.find(:id=>@token.user_id)
+    halt(400, "invalid token") unless user
+
+    item = Item.find(:id=>params[:item_id])
+    halt(400, "item not found") unless item 
+    halt(400, "access denied") unless user.can_read item
+
+    @result = item.to_result_hash
+    JSON.generate(@result)
+  end
+
+  #
+  # re-activate item - undelete item
+  #
+  put '/api/v1/item/undelete' do
+
+    user = User.find(:id=>@token.user_id)
+    halt(400, "invalid token") unless user
+
+    item_id = params[:item_id].to_i
+    item = Item.find(:id=>item_id)
+    halt(400, "item_id invalid") unless item
+    halt(400, "access denied") unless user.can_write_to(item)
+
+    if item.status == Item::STATUS[:deleted] 
+      item.status = Item::STATUS[:active]
+      item.save
+    end
+    @result[:id] = item.id
+    @result[:status] = item.status
+    JSON.generate(@result)
+  end
+
+  #
+  # activate item - notify item upload completed
+  #
+  put '/api/v1/item/activate' do
 
     user = User.find(:id=>@token.user_id)
     halt(400, "invalid token") unless user
@@ -133,20 +250,15 @@ class Carnation < Sinatra::Base
     valid_after = 0 if valid_after <= 0
 
     item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
-    item.status = Item::STATUS[:uploaded]
+    item.status = Item::STATUS[:active]
     item.save
 
     p "item saved, registering a worker job for item:#{item.id}"
-    require 'resque_workers'
+    require 'create_derivatives'
     Resque.enqueue(CreateDerivatives, :item_id=>item.id)
 
-    @result[:item_id] = item.id
+    @result[:id] = item.id
     @result[:status] = item.status
-    @result[:path] = item.path
-    @result[:extension] = item.extension
-    @result[:valid_after] = item.valid_after
-    @result[:created_at] = item.created_at
-    @result[:updated_at] = item.updated_at
     JSON.generate(@result)
   end
 
@@ -175,7 +287,7 @@ class Carnation < Sinatra::Base
       ignore_status = false
       ignore_valid_after = false
     end
-    ds = ds.where('status = ?', Item::STATUS[:uploaded]) unless ignore_status
+    ds = ds.where('status = ?', Item::STATUS[:active]) unless ignore_status
     ds = ds.where('valid_after < ?', Time.now.to_i) unless ignore_valid_after
 
     item_id = params[:item_id].to_i
@@ -215,29 +327,7 @@ class Carnation < Sinatra::Base
 
     items = []
     ds.all.each do |item|
-
-      liked_by = []
-      ViewerLikeItem.where(:item_id=>item.id).all.each do |r|
-        liked_by << {:viewer_id=>r.viewer_id, :count=>r.count}
-      end
-
-      derivatives = []
-      item.derivatives.each do |derivative|
-        derivatives << {:index=>derivative.index, 
-                        :name=>derivative.name, 
-                        :width=>derivative.width, 
-                        :height=>derivative.height, 
-                        :status=>derivative.status, 
-                        :url=>derivative.presigned_url(:get)}
-      end
-      items << {:id=>item.id, 
-                :status=>item.status, 
-                :created_at=>item.created_at, 
-                :updated_at=>item.updated_at, 
-                :valid_after=>item.valid_after, 
-                :url=>item.presigned_url(:get), 
-                :liked_by=>liked_by, 
-                :derivatives=>derivatives}
+      items << item.to_result_hash
     end
 
     @result[:user_id] = owner.id

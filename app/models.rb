@@ -292,7 +292,7 @@ class ViewerLikeItem < Sequel::Model(:viewer_like_items)
 end
 
 class Item < Sequel::Model(:items)
-  STATUS = { :initiated => 0, :uploaded => 1, :trashed => 2, :deleted => 3 }
+  STATUS = { :initiated => 0, :active => 1, :deleted => 2 }
   many_to_many :viewers, :left_key=>:item_id, :right_key=>:viewer_id, :join_table=>:viewer_like_items;
   one_to_many :derivatives
   def initialize(values={})
@@ -320,6 +320,20 @@ class Item < Sequel::Model(:items)
     end
     self.remove_all_viewers
     super
+  end
+
+  def to_result_hash
+    result = self.to_hash
+    result[:url] = self.presigned_url(:get)
+    result[:liked_by] = ViewerLikeItem.where(:item_id=>self.id).all.map do |r|
+      {:viewer_id=>r.viewer_id, :count=>r.count}
+    end
+    result[:derivatives] = self.derivatives.map do |d|
+      h = d.to_hash
+      h[:url] = d.presigned_url(:get)
+      h
+    end
+    result
   end
 
   def presigned_url(method_symbol)
@@ -361,7 +375,7 @@ class Item < Sequel::Model(:items)
         derivative.name = "thumbnail"
         derivative.width = image.columns
         derivative.height = image.rows
-        derivative.status = STATUS[:uploaded]
+        derivative.status = STATUS[:active]
         derivative.save
       end
 
@@ -387,7 +401,7 @@ class Item < Sequel::Model(:items)
         derivative.name = "medium"
         derivative.width = image.columns
         derivative.height = image.rows
-        derivative.status = STATUS[:uploaded]
+        derivative.status = STATUS[:active]
         derivative.save
       end
       p "medium image saved"
@@ -397,7 +411,7 @@ end
 
 
 class Derivative < Sequel::Model(:derivatives)
-  STATUS = { :initiated => 0, :uploaded => 1, :trashed => 2, :deleted => 3 }
+  STATUS = { :initiated => 0, :active => 1, :deleted => 2 }
   many_to_one :item
   unrestrict_primary_key
   def initialize(values={})
@@ -448,3 +462,4 @@ class AccessToken < Sequel::Model(:accesstokens)
     )
   end
 end
+

@@ -22,7 +22,7 @@ describe Carnation do
       get '/api/v1/user', {:user_id=>@user.id, :access_token=>@token}
       expect(last_response).to be_ok
       result = JSON.parse(last_response.body)
-      expect(result["user_id"]).to eq(@user.id)
+      expect(result["id"]).to eq(@user.id)
       expect(result["email"]).to eq(@user.email)
       expect(result["name"]).to eq(@user.name)
     end
@@ -71,6 +71,8 @@ describe Carnation do
       expect(result['status']).to eq(0)
       expect(result['url'].length).to be >0
       expect(result['url'].index('https')).to eq(0)
+      delete '/api/v1/item', {:item_id=>result['item_id'], :access_token=>@token}
+      expect(last_response).to be_ok
     end
 
     it "should not be OK without token" do

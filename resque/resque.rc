@@ -1,5 +1,5 @@
 queues: 'default'
-require: 'resque_workers.rb'
+require: 'resque/worker.rb'
 pid_file: 'resque/resque.pid'
 interval: 5
 daemon: true
