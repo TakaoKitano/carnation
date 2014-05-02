@@ -8,6 +8,11 @@ task :dbinit do
   sh "bundle exec ruby migrate/dbinit.rb"
 end
 
+desc 'put test data into the database'
+task :testdata do
+  sh "bundle exec ruby migrate/testdata.rb"
+end
+
 desc 'start test server'
 task :rackup do
   sh 'bundle exec rackup'
