@@ -7,6 +7,7 @@ require 'securerandom'
 require 'date' 
 require 'net/https'
 require 'uri'
+require 'benchmark'
 require 'open-uri'
 require 'RMagick'
 
@@ -347,65 +348,29 @@ class Item < Sequel::Model(:items)
     p "create_and_upload_derivatives item_id=#{item_id}"
     item = Item.find(:id=>item_id)
     return nil if not item
-    presigned_url =  item.presigned_url(:get)
-    open(presigned_url) { |f|
-      original = Magick::Image.from_blob(f.read)
 
-      #
-      # thumbnail image
-      # 
-      image = original[0].resize_to_fill(100,100)
-      image.format = "PNG"
+    s3obj = $bucket.objects[item.path + item.extension]
+    tmpfile = Tempfile.new('derivatives')
+    begin
+      s3obj.read { |chunk|
+        tmpfile.write(chunk)
+      }
+      imagelist = Magick::ImageList.new(tmpfile.path)
+      if imagelist.length > 0
+        original = imagelist[0]
 
-      derivative = Derivative.find_or_create(:item_id=>item.id, :index=>2)
-      derivative.extension = ".png"
-      p "path = #{derivative.path}"
+        image = original.resize_to_fill(100,100)
+        derivative = Derivative.find_or_create(:item_id=>item.id, :index=>2)
+        derivative.store_and_upload_file(image, "thumbnail") 
 
-      uri = URI::parse(derivative.presigned_url(:put))
-      p "put uri= #{uri.to_s}"
-      https = Net::HTTP.new(uri.host, uri.port)
-      https.use_ssl = true
-
-      request = Net::HTTP::Put.new(uri.request_uri)
-      request.body = image.to_blob
-      response = https.request(request)
-
-      p response
-      if response.code == "200"
-        derivative.name = "thumbnail"
-        derivative.width = image.columns
-        derivative.height = image.rows
-        derivative.status = STATUS[:active]
-        derivative.save
+        image = original.resize_to_fit(1920)
+        derivative = Derivative.find_or_create(:item_id=>item.id, :index=>1)
+        derivative.store_and_upload_file(image, "medium") 
       end
-
-      #
-      # medium size image
-      # 
-      image = original[0].resize_to_fit(1920)
-      image.format = "PNG"
-
-      derivative = Derivative.find_or_create(:item_id=>item.id, :index=>1)
-      derivative.extension = ".png"
-
-      uri = URI::parse(derivative.presigned_url(:put))
-      p "put uri= #{uri.to_s}"
-      https = Net::HTTP.new(uri.host, uri.port)
-      https.use_ssl = true
-
-      request = Net::HTTP::Put.new(uri.request_uri)
-      request.body = image.to_blob
-      response = https.request(request)
-      p response
-      if response.code == "200"
-        derivative.name = "medium"
-        derivative.width = image.columns
-        derivative.height = image.rows
-        derivative.status = STATUS[:active]
-        derivative.save
-      end
-      p "medium image saved"
-    }
+    ensure
+      tmpfile.close
+      tmpfile.unlink
+    end
   end
 end
 
@@ -431,6 +396,40 @@ class Derivative < Sequel::Model(:derivatives)
     super
     self.path = self.item.path + "_" + sprintf("%02d", self.index)
     self.save
+  end
+
+  def store_and_upload_file(image, name)
+
+    p "creating_and_upload #{name} ..."
+    tmpfile = Tempfile.new(['derivatives', '.png'])
+    filepath = tmpfile.path
+    begin
+      Benchmark.bm(8, "TOTAL:") do |bm|
+        total = bm.report("DB:") {
+          self.name = name
+          self.width = image.columns
+          self.height = image.rows
+          self.status = STATUS[:active]
+          self.save
+        }
+
+        total += bm.report("CREATE:") {
+          image.format = 'PNG'
+          image.write(filepath) 
+          image.destroy!
+        }
+
+        total += bm.report("UPLOAD:") {
+
+          $bucket.objects[self.path + self.extension].write(:file => filepath)
+        }
+        [total]
+      end
+    ensure
+      tmpfile.close
+      tmpfile.unlink
+    end
+    return true
   end
 end
 
