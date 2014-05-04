@@ -358,6 +358,10 @@ class Item < Sequel::Model(:items)
       imagelist = Magick::ImageList.new(tmpfile.path)
       if imagelist.length > 0
         original = imagelist[0]
+        item.width = original.columns
+        item.height = original.rows
+        item.filesize = tmpfile.size
+        item.save
 
         image = original.resize_to_fill(100,100)
         derivative = Derivative.find_or_create(:item_id=>item.id, :index=>2)
@@ -405,19 +409,23 @@ class Derivative < Sequel::Model(:derivatives)
     filepath = tmpfile.path
     begin
       Benchmark.bm(8, "TOTAL:") do |bm|
-        total = bm.report("DB:") {
+
+        total = bm.report("CREATE:") {
+          image.format = 'PNG'
+          image.write(filepath) 
+        }
+
+        total += bm.report("DB:") {
           self.name = name
+          self.extension = ".png"
           self.width = image.columns
           self.height = image.rows
           self.status = STATUS[:active]
+          self.filesize = File.size(filepath)
           self.save
         }
 
-        total += bm.report("CREATE:") {
-          image.format = 'PNG'
-          image.write(filepath) 
-          image.destroy!
-        }
+        image.destroy!
 
         total += bm.report("UPLOAD:") {
 
