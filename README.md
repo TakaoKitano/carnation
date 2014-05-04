@@ -31,8 +31,7 @@ sudo apt-get -y install redis-server
 ### for rmagick
 
 <pre>
-sudo apt-get -y install imagemagick
-sudo apt-get -y install libmagickwand-dev
+sudo apt-get -y install imagemagick libmagickwand-dev
 </pre>
 
 ### ruby2.1
@@ -47,6 +46,7 @@ cd ruby-2.1.1
 ./configure --prefix=/usr/local
 make && make check
 sudo make install
+sudo gem install bundler
 </pre>
 
 ### mysql (server will not be used, but for now it's needed)
@@ -60,18 +60,20 @@ sudo apt-get install -y mysql-server-5.5
 
 <pre>
 $ git clone git@github.com:kajiwara321/magoch_server.git
-$ sudo gem install bundler
-$ cd magoch_server && bundle install --path vendor/bundle
+$ cd magoch_server 
+$ bundle install --path vendor/bundle
 $ mysql -u root <initialize_database.sql
 $ rake dbinit
+$ rake testdata
 $ rake spec
 </pre>
 
 ### run server
 
 <pre>
+$ rake resque:stop
 $ rake resque:start
-$ rake rackup
+$ nohup rake rackup
 </pre>
 
 
