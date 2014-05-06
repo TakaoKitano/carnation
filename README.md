@@ -2,13 +2,13 @@
 
 ## webtest
 
-http://54.238.176.142:9292/webtest/index.html kenken/magomago
+http://54.178.141.213:9292/webtest/index.html kenken/magomago
 
 ## server setup
 
 ###server env
 
-ubuntu 12.04 LTS server
+ubuntu 14.04 LTS server
 
 ### make sure to take the latest
 
@@ -37,8 +37,8 @@ sudo apt-get -y install imagemagick libmagickwand-dev
 ### mysql (server will not be used, but for now it's needed)
 
 <pre>
-sudo apt-get install -y libmysqlclient-dev mysql-client-5.5
-sudo apt-get install -y mysql-server-5.5
+sudo apt-get install -y libmysqlclient-dev mysql-client
+sudo apt-get install -y mysql-server
 </pre>
 
 ### setup 
@@ -69,7 +69,7 @@ sudo gem install bundler
 <pre>
 $ cd magoch_server 
 $ bundle install --path vendor/bundle
-$ mysql -u root <initialize_database.sql
+$ mysql -u root <migrate/initialize_database.sql
 $ rake dbinit
 $ rake testdata
 $ rake spec
