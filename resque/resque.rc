@@ -2,6 +2,6 @@ queues: 'default'
 require: 'resque/worker.rb'
 pid_file: 'resque/resque.pid'
 interval: 5
-daemon: true
+daemon: false
 timeout: 30
-graceful_term: false
+graceful_term: true
