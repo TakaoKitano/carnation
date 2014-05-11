@@ -13,6 +13,14 @@ class Carnation < Sinatra::Base
     p "Sinatra::Reloader registered"
   end 
 
+  helpers do
+    def cors_headers
+      headers['Access-Control-Allow-Methods'] = '*'
+      headers['Access-Control-Allow-Origin'] = '*'
+      headers['Access-Control-Allow-Headers'] = 'Authorization'
+    end
+  end
+
   use Rack::OAuth2::Server::Resource::Bearer do |request|
     access_token = request.access_token || request.invalid_token!
     #p "access_token=" + access_token
@@ -30,12 +38,14 @@ class Carnation < Sinatra::Base
     @result = {}
     response['Content-Type'] = 'application/json'
     @token = request.env[Rack::OAuth2::Server::Resource::ACCESS_TOKEN]
-    #if @token
-    #  p "access_token:", @token 
-    #else
-    #  p "no access_token provided"
-    #end
     halt(400, "no access token") unless @token
+
+    cors_headers
+  end
+
+  options '*' do
+    cors_headers
+    halt 200
   end
 
   #
