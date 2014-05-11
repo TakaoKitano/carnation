@@ -42,3 +42,17 @@ dJW89vEret3qaiVZBnLVZsYUL0zulvuYiMNWzNlD01R7qaLFmNlElx8id/qfBYXmOItDX2WPRQ3K
 5cOw0VaeDzrVBWNJyzXh2SZa2u9l9T1pP7nETIkPxYAR4nOQKAjUBmZgoJxHCtVsOuELtXaP6Ft6
 14SXjR6yKdSn5+eyD+r87u+RiqiGhbziMluN2oxRLRZu11e+wQRiablWsvv4SQ5rw/k=
 -----END RSA PRIVATE KEY-----
+
+#
+# S3 CORS
+#
+<CORSConfiguration>
+    <CORSRule>
+        <AllowedOrigin>*</AllowedOrigin>
+        <AllowedMethod>GET</AllowedMethod>
+        <AllowedMethod>PUT</AllowedMethod>
+        <AllowedMethod>POST</AllowedMethod>
+        <MaxAgeSeconds>3000</MaxAgeSeconds>
+        <AllowedHeader>*</AllowedHeader>
+    </CORSRule>
+</CORSConfiguration>
