@@ -4,6 +4,23 @@ require 'models'
 
 class Token < Sinatra::Base
 
+  helpers do
+    def cors_headers
+      headers['Access-Control-Allow-Methods'] = '*'
+      headers['Access-Control-Allow-Origin'] = '*'
+      headers['Access-Control-Allow-Headers'] = 'Authorization'
+    end
+  end
+
+  before do
+    cors_headers
+  end
+
+  options '*' do
+    cors_headers
+    halt 200
+  end
+
   post '/token' do
     authenticator.call(env)
   end
