@@ -10,7 +10,8 @@ require 'uri'
 require 'benchmark'
 require 'open-uri'
 require 'RMagick'
-
+require 'filemagic'
+require 'streamio-ffmpeg'
 require 'config.rb'
 
 class User < Sequel::Model(:users)
@@ -347,34 +348,65 @@ class Item < Sequel::Model(:items)
   def self.create_and_upload_derivatives(item_id)
     p "create_and_upload_derivatives item_id=#{item_id}"
     item = Item.find(:id=>item_id)
-    return nil if not item
+    return nil unless item
 
     s3obj = $bucket.objects[item.path + item.extension]
-    tmpfile = Tempfile.new('derivatives')
+    tmpfile = Tempfile.new(['item', item.extension])
     begin
       s3obj.read { |chunk|
         tmpfile.write(chunk)
+        tmpfile.flush
       }
-      imagelist = Magick::ImageList.new(tmpfile.path)
-      if imagelist.length > 0
-        original = imagelist[0]
-        item.width = original.columns
-        item.height = original.rows
-        item.filesize = tmpfile.size
-        item.save
-
-        image = original.resize_to_fill(100,100)
-        derivative = Derivative.find_or_create(:item_id=>item.id, :index=>2)
-        derivative.store_and_upload_file(image, "thumbnail") 
-
-        image = original.resize_to_fit(1920)
-        derivative = Derivative.find_or_create(:item_id=>item.id, :index=>1)
-        derivative.store_and_upload_file(image, "medium") 
+      mime_type = FileMagic.new(:mime_type).file(tmpfile.path)
+      if mime_type.start_with?("image")
+        item.create_image_derivatives(tmpfile.path)
+      elsif mime_type.start_with?("video")
+        item.create_video_derivatives(tmpfile.path)
       end
     ensure
-      tmpfile.close
-      tmpfile.unlink
+      #tmpfile.close
+      #tmpfile.unlink
     end
+  end
+
+  def create_image_derivatives(filepath)
+    original = Magick::Image.read(filepath).first
+    return unless original
+    self.width = original.columns
+    self.height = original.rows
+    self.duration = 0
+    self.filesize = File.size(filepath)
+    self.save
+
+    Derivative.generate_derivatives(self.id, original)
+
+  end
+
+  def create_video_derivatives(filepath)
+    movie = FFMPEG::Movie.new(filepath)
+    return unless movie
+    self.width = movie.width
+    self.height = movie.height
+    self.duration = movie.duration
+    self.filesize = movie.size
+    self.save
+
+    p "width=" + movie.width.to_s
+    p "height="+ movie.height.to_s
+    p "duration=" + movie.duration.to_s
+    begin
+      tmpfile = Tempfile.new(['screenshot', '.png'])
+      seeksec = [[0, movie.duration-1].max, 3].min
+      movie.screenshot(tmpfile.path, {:seek_time=>seeksec, :resolution=>"#{movie.width}x#{movie.height}"})
+      original = Magick::Image.read(tmpfile.path).first
+      raise "error" unless original
+      Derivative.generate_derivatives(self.id, original)
+
+    ensure
+      #tmpfile.close
+      #tmpfile.unlink
+    end
+
   end
 end
 
@@ -402,9 +434,20 @@ class Derivative < Sequel::Model(:derivatives)
     self.save
   end
 
+  def self.generate_derivatives(item_id, original)
+    image = original.resize_to_fit(1920)
+    derivative = Derivative.find_or_create(:item_id=>item_id, :index=>1, :extension=>".png")
+    derivative.store_and_upload_file(image, "medium")
+    image.destroy!
+
+    image = original.resize_to_fill(100,100)
+    derivative = Derivative.find_or_create(:item_id=>item_id, :index=>2, :extension=>".png")
+    derivative.store_and_upload_file(image, "thumbnail")
+    image.destroy!
+  end
+
   def store_and_upload_file(image, name)
 
-    p "creating_and_upload #{name} ..."
     tmpfile = Tempfile.new(['derivatives', '.png'])
     filepath = tmpfile.path
     begin
@@ -417,18 +460,15 @@ class Derivative < Sequel::Model(:derivatives)
 
         total += bm.report("DB:") {
           self.name = name
-          self.extension = ".png"
           self.width = image.columns
           self.height = image.rows
+          self.duration = 0
           self.status = STATUS[:active]
           self.filesize = File.size(filepath)
           self.save
         }
 
-        image.destroy!
-
         total += bm.report("UPLOAD:") {
-
           $bucket.objects[self.path + self.extension].write(:file => filepath)
         }
         [total]
