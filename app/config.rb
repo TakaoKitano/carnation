@@ -1,8 +1,8 @@
 require 'sequel'
 require 'mysql2'
 
-#$DB = Sequel.connect('mysql://carnation:aFx4mMHb3z7d6dy@localhost/carnationdb')
-$DB = Sequel.connect('mysql://carnation:aFx4mMHb3z7d6dy@carnationdbinstance.cyn734ercsgb.ap-northeast-1.rds.amazonaws.com/carnationdb')
+$DB = Sequel.connect('mysql://carnation:aFx4mMHb3z7d6dy@localhost/carnationdb')
+#$DB = Sequel.connect('mysql://carnation:aFx4mMHb3z7d6dy@carnationdbinstance.cyn734ercsgb.ap-northeast-1.rds.amazonaws.com/carnationdb')
 Sequel.default_timezone = :utc
 
 require 'resque'
@@ -15,7 +15,7 @@ AWS.config(
   :region => 'ap-northeast-1')
 
 $s3 = AWS::S3.new
-#$bucket = $s3.buckets['carnationdata']
-$bucket = $s3.buckets['carnationtest']
+$bucket = $s3.buckets['carnationdata']
+#$bucket = $s3.buckets['carnationtest']
 
 
