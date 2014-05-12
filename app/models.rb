@@ -445,7 +445,7 @@ class Derivative < Sequel::Model(:derivatives)
   end
 
   def self.generate_derivatives(item_id, original)
-    image = original.resize_to_fit(1920)
+    image = original.resize_to_fit(1920, 1080)
     derivative = Derivative.find_or_create(:item_id=>item_id, :index=>1, :extension=>".png")
     derivative.store_and_upload_file(image, "medium")
     image.destroy!
