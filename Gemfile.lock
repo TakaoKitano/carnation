@@ -22,6 +22,8 @@ GEM
       nokogiri (>= 1.4.4)
     backports (3.6.0)
     diff-lcs (1.2.5)
+    exiftool (0.6.0)
+      json
     httpclient (2.3.4.1)
     i18n (0.6.9)
     json (1.8.1)
@@ -75,6 +77,7 @@ PLATFORMS
 DEPENDENCIES
   activesupport
   aws-sdk
+  exiftool
   httpclient
   multi_json
   mysql
