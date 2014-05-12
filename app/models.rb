@@ -11,6 +11,7 @@ require 'benchmark'
 require 'open-uri'
 require 'RMagick'
 require 'filemagic'
+require 'exiftool'
 require 'streamio-ffmpeg'
 require 'config.rb'
 
@@ -370,7 +371,7 @@ class Item < Sequel::Model(:items)
   end
 
   def create_image_derivatives(filepath)
-    original = Magick::Image.read(filepath).first
+    original = Magick::Image.read(filepath).first.auto_orient
     return unless original
     self.width = original.columns
     self.height = original.rows
@@ -394,11 +395,20 @@ class Item < Sequel::Model(:items)
     p "width=" + movie.width.to_s
     p "height="+ movie.height.to_s
     p "duration=" + movie.duration.to_s
+    rotation = 0
+    e = Exiftool.new(filepath)
+    if e
+      rotation = e.to_hash[:rotation]
+      p "rotation=" + rotation.to_s if rotation
+    end 
     begin
       tmpfile = Tempfile.new(['screenshot', '.png'])
       seeksec = [[0, movie.duration-1].max, 3].min
       movie.screenshot(tmpfile.path, {:seek_time=>seeksec, :resolution=>"#{movie.width}x#{movie.height}"})
       original = Magick::Image.read(tmpfile.path).first
+      if (rotation && rotation != 0)
+        original.rotate!(rotation)
+      end
       raise "error" unless original
       Derivative.generate_derivatives(self.id, original)
 

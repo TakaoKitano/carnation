@@ -31,7 +31,7 @@ sudo apt-get -y install redis-server
 ### for rmagick, avconv
 
 <pre>
-sudo apt-get -y install imagemagick libmagickwand-dev libmagic-dev libav-tools
+sudo apt-get -y install imagemagick libmagickwand-dev libmagic-dev libav-tools libimage-exiftool-perl
 </pre>
 
 ### mysql (server will not be used, but for now it's needed)
