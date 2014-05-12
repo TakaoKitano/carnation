@@ -28,10 +28,10 @@ sudo apt-get -y install wget curl git pkg-config
 sudo apt-get -y install redis-server
 </pre>
 
-### for rmagick
+### for rmagick, avconv
 
 <pre>
-sudo apt-get -y install imagemagick libmagickwand-dev
+sudo apt-get -y install imagemagick libmagickwand-dev libmagic-dev libav-tools
 </pre>
 
 ### mysql (server will not be used, but for now it's needed)
