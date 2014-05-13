@@ -33,5 +33,16 @@ namespace :resque do
   task :stop do
     sh "kill -9 `cat resque/resque.pid`"
   end
+end
 
+namespace :server do
+  desc 'start unicorn server'
+  task :start do
+    sh 'bundle exec unicorn -c unicorn.rb -D'
+  end
+
+  desc 'stop unicorn server'
+  task :stop do
+    sh "cat server/unicorn.pid | xargs kill -QUIT"
+  end
 end
