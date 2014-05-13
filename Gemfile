@@ -16,3 +16,4 @@ gem "rmagick"
 gem 'ruby-filemagic'
 gem 'exiftool'
 gem "resque", "~> 2.0.0.pre.1", github: "resque/resque"
+gem "unicorn"

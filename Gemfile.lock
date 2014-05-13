@@ -1,6 +1,6 @@
 GIT
   remote: git://github.com/resque/resque.git
-  revision: c46be4c49dea8c4e78fca7aa4b35040091d2bd18
+  revision: c550717be6fab25371d0776780adf9a5e657fe71
   specs:
     resque (2.0.0.pre.1)
       json
@@ -11,13 +11,13 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (4.1.0)
+    activesupport (4.1.1)
       i18n (~> 0.6, >= 0.6.9)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
       thread_safe (~> 0.1)
       tzinfo (~> 1.1)
-    aws-sdk (1.39.0)
+    aws-sdk (1.40.1)
       json (~> 1.4)
       nokogiri (>= 1.4.4)
     backports (3.6.0)
@@ -27,19 +27,21 @@ GEM
     httpclient (2.3.4.1)
     i18n (0.6.9)
     json (1.8.1)
+    kgio (2.9.2)
     mini_portile (0.5.3)
     minitest (5.3.3)
     mono_logger (1.1.0)
     multi_json (1.10.0)
     mysql (2.9.1)
     mysql2 (0.3.15)
-    nokogiri (1.6.1)
-      mini_portile (~> 0.5.0)
+    nokogiri (1.6.2)
+      mini_portile (~> 0.5.2)
     rack (1.5.2)
     rack-protection (1.5.3)
       rack
     rack-test (0.6.2)
       rack (>= 1.0)
+    raindrops (0.13.0)
     redis (3.0.7)
     redis-namespace (1.4.1)
       redis (~> 3.0.4)
@@ -70,6 +72,10 @@ GEM
     tilt (1.4.1)
     tzinfo (1.1.0)
       thread_safe (~> 0.1)
+    unicorn (4.8.3)
+      kgio (~> 2.6)
+      rack
+      raindrops (~> 0.7)
 
 PLATFORMS
   ruby
@@ -89,3 +95,4 @@ DEPENDENCIES
   sequel
   sinatra
   sinatra-contrib
+  unicorn
