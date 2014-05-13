@@ -80,7 +80,8 @@ $ rake spec
 <pre>
 $ rake resque:stop
 $ rake resque:start
-$ nohup rake rackup
+$ rake server:stop
+$ rake server:start
 </pre>
 
 
