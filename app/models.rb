@@ -364,9 +364,11 @@ class Item < Sequel::Model(:items)
       elsif mime_type.start_with?("video")
         item.create_video_derivatives(tmpfile.path, mime_type)
       end
+    rescue
+      p "error while reading S3 object item id=#{item.id}"
     ensure
-      #tmpfile.close
-      #tmpfile.unlink
+      tmpfile.close
+      tmpfile.unlink
     end
   end
 
@@ -414,9 +416,12 @@ class Item < Sequel::Model(:items)
       raise "error" unless original
       Derivative.generate_derivatives(self.id, original)
 
+    rescue
+      p "error while creating screenshot id=#{self.id}"
+
     ensure
-      #tmpfile.close
-      #tmpfile.unlink
+      tmpfile.close
+      tmpfile.unlink
     end
 
   end
