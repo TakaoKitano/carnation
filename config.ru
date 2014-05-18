@@ -5,7 +5,6 @@ $LOAD_PATH.unshift(appdir) unless $LOAD_PATH.include?(appdir)
 
 require 'carnation'
 require 'token'
-require 'webtest'
 
-run Rack::Cascade.new [Webtest, Token, Carnation]
+run Rack::Cascade.new [Token, Carnation]
 
