@@ -5,6 +5,6 @@ class CreateDerivatives
   def self.perform(param)
     item_id = param["item_id"]
     p "item_id=#{item_id}"
-    Item.create_and_upload_derivatives(item_id)
+    Item.create_derivatives(item_id)
   end
 end

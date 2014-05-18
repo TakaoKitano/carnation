@@ -346,7 +346,7 @@ class Item < Sequel::Model(:items)
     uri.to_s
   end
 
-  def self.create_and_upload_derivatives(item_id)
+  def self.create_derivatives(item_id)
     p "create_and_upload_derivatives item_id=#{item_id}"
     item = Item.find(:id=>item_id)
     return nil unless item
@@ -360,9 +360,9 @@ class Item < Sequel::Model(:items)
       }
       mime_type = FileMagic.new(:mime_type).file(tmpfile.path)
       if mime_type.start_with?("image")
-        item.create_image_derivatives(tmpfile.path)
+        item.create_image_derivatives(tmpfile.path, mime_type)
       elsif mime_type.start_with?("video")
-        item.create_video_derivatives(tmpfile.path)
+        item.create_video_derivatives(tmpfile.path, mime_type)
       end
     ensure
       #tmpfile.close
@@ -370,26 +370,28 @@ class Item < Sequel::Model(:items)
     end
   end
 
-  def create_image_derivatives(filepath)
+  def create_image_derivatives(filepath, mime_type)
     original = Magick::Image.read(filepath).first.auto_orient
     return unless original
     self.width = original.columns
     self.height = original.rows
     self.duration = 0
     self.filesize = File.size(filepath)
+    self.mime_type = mime_type
     self.save
 
     Derivative.generate_derivatives(self.id, original)
 
   end
 
-  def create_video_derivatives(filepath)
+  def create_video_derivatives(filepath, mime_type)
     movie = FFMPEG::Movie.new(filepath)
     return unless movie
     self.width = movie.width
     self.height = movie.height
     self.duration = movie.duration
     self.filesize = movie.size
+    self.mime_type = mime_type
     self.save
 
     p "width=" + movie.width.to_s
@@ -475,6 +477,7 @@ class Derivative < Sequel::Model(:derivatives)
           self.duration = 0
           self.status = STATUS[:active]
           self.filesize = File.size(filepath)
+          self.mime_type = "image/png"
           self.save
         }
 
