@@ -7,7 +7,7 @@ if dbhost
 else
   dbhost = "localhost"
 end
-$DB = Sequel.connect("mysql://carnation:aFx4mMHb3z7d6dy@#{dbhost}/carnationdb")
+$DB = Sequel.connect("mysql2://carnation:aFx4mMHb3z7d6dy@#{dbhost}/carnationdb")
 Sequel.default_timezone = :utc
 
 require 'resque'

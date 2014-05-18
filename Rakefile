@@ -1,16 +1,48 @@
-desc 'create mysql account and database'
-task :sqlinit do
-  sh 'mysql -u root -p <migrate/initialize_database.sql'
-end
 
-desc 'database one time initialization'
-task :dbinit do
-  sh "bundle exec ruby migrate/dbinit.rb"
-end
 
-desc 'put test data into the database'
-task :testdata do
-  sh "bundle exec ruby migrate/testdata.rb"
+namespace :db do
+  desc 'create mysql account and database'
+  task :sqlinit do
+    sh 'mysql -u root -p <db/initialize_database.sql'
+  end
+
+  desc 'dump mysql data'
+  task :backup do
+    dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbhost = 'localhost' unless dbhost
+    sh "mysqldump -ucarnation -paFx4mMHb3z7d6dy carnationdb  -h #{dbhost} --no-create-info >sqldump.sql"
+  end
+
+  desc 'restore dumped data'
+  task :restore do
+    dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbhost = 'localhost' unless dbhost
+    sh "mysql -ucarnation -paFx4mMHb3z7d6dy carnationdb  -h #{dbhost} <sqldump.sql"
+  end
+
+  desc 'drop mysql tables - this blows up all the data, be careful'
+  task :drop do
+    dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbhost = 'localhost' unless dbhost
+    sh "mysql -ucarnation -paFx4mMHb3z7d6dy carnationdb  -h #{dbhost} <db/droptables.sql"
+  end
+
+  desc 'migrate to the latest state'
+  task :migrate do
+    dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbhost = 'localhost' unless dbhost
+    sh "bundle exec sequel -m migrate \"mysql2://carnation:aFx4mMHb3z7d6dy@#{dbhost}/carnationdb\" -E "
+  end
+
+  desc 'create built-in accounts'
+  task :builtin_accounts do
+    sh "bundle exec ruby db/builtin_accounts.rb"
+  end
+
+  desc 'create test data'
+  task :testdata do
+    sh "bundle exec ruby db/testdata.rb"
+  end
 end
 
 desc 'start test server'
@@ -46,3 +78,4 @@ namespace :server do
     sh "cat server/unicorn.pid | xargs kill -QUIT"
   end
 end
+
