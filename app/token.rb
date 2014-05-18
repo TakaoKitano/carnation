@@ -8,7 +8,7 @@ class Token < Sinatra::Base
     def cors_headers
       headers['Access-Control-Allow-Methods'] = '*'
       headers['Access-Control-Allow-Origin'] = '*'
-      headers['Access-Control-Allow-Headers'] = 'Authorization'
+      headers['Access-Control-Allow-Headers'] = 'Authorization,X-Requested-With'
     end
   end
 
