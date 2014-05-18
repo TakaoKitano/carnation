@@ -69,9 +69,33 @@ sudo gem install bundler
 <pre>
 $ cd magoch_server 
 $ bundle install --path vendor/bundle
-$ mysql -u root <migrate/initialize_database.sql
-$ rake dbinit
-$ rake testdata
+$ mysql -u root <migrate/initialize_database.sql (or create db in AWS admin console RDS)
+</pre>
+
+at very first time
+
+<pre>
+$ rake db:migrate
+$ rake db:builtin_accounts
+$ rake db:testdata
+$ rake spec
+</pre>
+
+if it's first time you perform migration, you need to drop tables in order to migrates
+you must backup data before that
+
+<pre>
+$ rake db:backup
+$ rake db:drop
+$ rake db:migrate
+$ rake db:restore
+$ rake spec
+</pre>
+
+or if you are sure migration doesn't destroy existing data
+
+<pre>
+$ rake db:migrate
 $ rake spec
 </pre>
 

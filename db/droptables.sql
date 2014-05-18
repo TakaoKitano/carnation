@@ -1,0 +1,12 @@
+drop table if exists derivatives;
+drop table if exists viewer_like_items;
+drop table if exists items;
+drop table if exists accesstokens;
+drop table if exists profiles;
+drop table if exists group_viewers;
+drop table if exists viewers;
+drop table if exists clients;
+drop table if exists group_users;
+drop table if exists groups;
+drop table if exists users;
+drop table if exists schema_info;
