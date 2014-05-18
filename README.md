@@ -1,8 +1,8 @@
 # carnation api server
 
-## webtest
+## webtest on dev server (54.178.141.213)
 
-http://54.178.141.213:9292/webtest/index.html kenken/magomago
+http://dev.mago-ch.com/webtest/index.html kenken/magomago
 
 ## server setup
 
