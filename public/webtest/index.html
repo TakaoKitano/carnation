@@ -1,0 +1,452 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css/styles.css">
+<title>carnation webtest</title>
+<script src="js/jquery-2.1.0.js"></script>
+<script src="js/jquery.collapse.js"></script>
+<script src="js/base64.js"></script>
+<script src="js/carnation.js"></script>
+<script>
+  var carnation = window.carnation;
+
+  var reset_tokens = function() {
+    reset_user_token();
+    reset_viewer_token();
+  }
+
+  var reset_user_token = function() {
+    console.log( "reset user token" );
+    carnation.reset_user_token();
+    $("#get_user_token").find("#user_id").text('');
+    $("#get_user_token").find("#token").text('');
+    $("#get_user_token").find("#token_type").text('');
+    $("#get_user_token").find("#scope").text('');
+    $("#get_user_token").find("#valid_until").text('');
+  }
+
+  var reset_viewer_token = function(event) {
+    console.log( "reset viewer token" );
+    carnation.reset_viewer_token();
+    $("#get_viewer_token").find("#viewer_id").text('');
+    $("#get_viewer_token").find("#token").text('');
+    $("#get_viewer_token").find("#token_type").text('');
+    $("#get_viewer_token").find("#scope").text('');
+    $("#get_viewer_token").find("#valid_until").text('');
+  }
+
+  var get_user_token = function(form) {
+    var email = $(form).find('*[name=email]')[0].value;
+    var password = $(form).find('*[name=password]')[0].value;
+    carnation.get_user_token(email, password, function(token) {
+      carnation.user_token = token.access_token;
+      $(form).find("#user_id").text(token.user_id)
+      $(form).find("#token").text(token.access_token)
+      $(form).find("#token_type").text(token.token_type)
+      $(form).find("#scope").text(token.scope)
+      $(form).find("#valid_until").text(new Date(parseInt(token.valid_until)))
+      $('*[name="user_id"]').val(token.user_id);
+      $('#user_access_token').val(token.access_token);
+    });
+  }
+
+  var get_viewer_token = function(form) {
+    var appid = $(form).find('*[name=appid]')[0].value;
+    var secret = $(form).find('*[name=secret]')[0].value;
+
+    console.log("appid=" + appid);
+    console.log("secret=" + secret);
+    var auth = Base64.encode(appid + ":" + secret);
+    carnation.get_viewer_token("Basic " + auth, function(token) {
+      carnation.viewer_token = token.access_token;
+      $(form).find("#viewer_id").text(token.viewer_id)
+      $(form).find("#token").text(token.access_token)
+      $(form).find("#token_type").text(token.token_type)
+      $(form).find("#scope").text(token.scope)
+      $(form).find("#valid_until").text(new Date(parseInt(token.valid_until)))
+      $('*[name="viewer_id"]').val(token.viewer_id);
+    });
+  }
+
+$(document).ready(function() {
+
+  get_user_token($('#get_user_token'));
+  get_viewer_token($('#get_viewer_token'));
+
+  $("#get_user_token").submit( function (event) {
+    console.log( "get user token" );
+    event.preventDefault();
+    get_user_token(this);
+  });
+
+  $("#get_viewer_token").submit( function (event) {
+    console.log( "get viewer token" );
+    event.preventDefault();
+    get_viewer_token(this);
+  });
+
+  $(".carnation_api").submit( function (event) {
+    console.log( "carnation_api" );
+    event.preventDefault();
+    var form = $(this);
+    var tokentype = $(form).find("input:checked")[0].value;
+    var token;
+    if (tokentype == "user")
+        token = carnation.user_token;
+    else
+        token = carnation.viewer_token;
+
+    console.log("calling api token=" + token);
+    carnation.callapi(form, token);
+  });
+
+});
+</script>
+
+</head>
+<body>
+  <h3>carnation api test</h3>
+
+<div data-collapse class="api">
+  <div>
+    <h4>retrieve access token for user</h4>
+  </div>
+    <form id="get_user_token" action="/token" method="POST">
+      <fieldset>
+        <div>
+            <label for="email">email</label>
+            <input id="email" type="text" value="test01@chikaku.com" name="email">
+        </div>
+        <div>
+            <label for="password">password</label>
+            <input id="password" type="text" value="dx7PnxqDZ5kr" name="password">
+        </div>
+        <ul>
+          <li>user_id=<span id="user_id"></span></li>
+          <li>token=<span id="token"></span></li>
+          <li>scope=<span id="scope"></span></li>
+          <li>token_type=<span id="token_type"></span></li>
+          <li>valid until: <span id="valid_until"></span></li>
+        </ul>
+        <input  type="submit" value="retrieve user token"/>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>retrieve access token for viewer</h4>
+    <form id="get_viewer_token" action="/token" method="POST">
+      <fieldset>
+        <div>
+          <label for="appid">appid</label>
+          <input id="appid" type="text" value="6052d5885f9c2a12c09ef90f815225d3" name="appid" size="40"/>
+        </div>
+        <div>
+          <label for="secret">secret</label>
+          <input id="secret" type="text" value="f6af879a7db8bfbe183e08c1a68e9035" name="secret" size="40"/>
+        </div>
+        <ul>
+          <li>viewer_id=<span id="viewer_id"></span></li>
+          <li>token=<span id="token"></span></li>
+          <li>scope=<span id="scope"></span></li>
+          <li>token_type= <span id="token_type"></span></li>
+          <li>valid until: <span id="valid_until"></span></li>
+        </ul>
+        <input  type="submit" value="retrieve viewer token">
+      </fieldset>
+    </form>
+</div>
+
+    <form action="result.html" method="GET" target="result">
+      <input  type="button" value="clear token" onclick="reset_tokens()">
+      <input  type="submit" value="open result window"/>
+    </form>
+    <hr/>
+
+<h3>query user</h3>
+
+<div data-collapse class="api">
+    <h4>get user info - user情報の取得</h4>
+    <form class="carnation_api" action="/api/v1/user" method="GET" >
+      <p>userの情報を取得します。存在しない user_id を指定した場合は、404 が返ります。</p>
+      <fieldset>
+        <div>
+          <label>user_id(mandatory)</label><input type="text" name="user_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>get user id by email - email による user id の取得</h4>
+    <form class="carnation_api" action="/api/v1/user_by_email" method="GET">
+      <p>user_id を取得します。指定されたemailをもつ user が存在しない場合は、404が返ります。</p>
+      <fieldset>
+        <div>
+          <label>email(mandatory)</label><input type="text" name="email" value="test01@chikaku.com"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<h3>upload item</h3>
+
+<div data-collapse class="api">
+    <h4>post initiate item upload - item upload の開始</h4>
+    <form class="carnation_api" action="/api/v1/item/initiate" method="POST">
+      <p>item のアップロードを開始します。以前にこの API を呼んで item id を取得済みの場合に、再度 upload 用の url を取得する場合は、item_id を指定してください。(画像を更新したい場合とかに）取得した url に対して、curl でアップロードするさいには次のようにします
+      <pre>
+        curl --upload-file filename url
+      </pre>
+ プログラムからは HTTP PUT でアップロードを行います.アップロードが完了したら、/api/v1/item/activate(notify upload completed) を呼んでアップロード完了をサーバーに通知してください.
+      </p>
+      <fieldset>
+        <div >
+          <label>user_id(mandatory)</label> <input type="text" name="user_id"/>
+        </div>
+        <div >
+          <label>item_id(optional)</label> <input type="text" name="item_id"/>
+        </div>
+        <div >
+          <label>title(optional)</label> <input type="text" name="title"/>
+        </div>
+        <div >
+          <label>description(optional)</label> <input type="text" name="description"/>
+        </div>
+        <div >
+          <label>width(optional)</label> <input type="number" name="width"/>
+        </div>
+        <div >
+          <label>height(optional)</label> <input type="number" name="height"/>
+        </div>
+        <div >
+          <label>extension(mandatory)</label>
+          <select name="extension">
+            <option value=".jpg">.jpg</option>
+            <option value=".png">.png</option>
+            <option value=".mp4">.mp4</option>
+            <option value=".mov">.mov</option>
+          </select>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>initiate item upload with browser (test purpose only) </h4>
+    <form  action="/api/v1/item/initiate_post" method="POST" target="upload">
+      <fieldset>
+        <div >
+          <label>user_id</label><input type="text" name="user_id" />
+        </div>
+        <div >
+          <label>item_id</label><input type="text" name="item_id" />
+        </div>
+        <div >
+          <label>extension</label>
+          <select name="extension">
+            <option value=".jpg">.jpg</option>
+            <option value=".png">.png</option>
+            <option value=".mp4">.mp4</option>
+            <option value=".mov">.mov</option>
+          </select>
+        </div>
+        <div >
+          <label>access_token</label><input type="text" name="access_token" id="user_access_token"/>
+        </div>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>active item - notify upload completed - アップロード完了の通知</h4>
+    <form class="carnation_api" action="/api/v1/item/activate" method="PUT">
+      <fieldset>
+        <div >
+          <label>item_id</label><input type="text" name="item_id"/>
+        </div>
+        <div >
+          <label>valid_after</label><input type="text" name="valid_after"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>delete item - item の削除</h4>
+    <form class="carnation_api" action="/api/v1/item" method="DELETE">
+      <p>itemを削除します。item activate の前によばれた場合は、アイテムのレコードを完全に削除します。そうでない場合は item.status が deleted 状態になりますが、データとしては削除されません
+      </p>
+      <fieldset>
+        <div >
+          <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>undelete item - item の削除のキャンセル</h4>
+    <form class="carnation_api" action="/api/v1/item/undelete" method="PUT">
+      <p>削除した item を復活します。(activate する前にdeleteしたアイテムは復活できません）
+      </p>
+      <fieldset>
+        <div >
+          <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>get item - 個別 item の取得</h4>
+    <form class="carnation_api" action="/api/v1/item" method="GET">
+      <p>
+        item を取得します。
+      </p>
+      <fieldset>
+        <div >
+          <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<h3>get items</h3>
+
+<div data-collapse class="api">
+    <h4>get user items</h4>
+    <form class="carnation_api" action="/api/v1/user/items" method="GET">
+      <fieldset>
+        <div >
+          <label>user_id</label><input type="text" name="user_id"/>
+        </div>
+        <div >
+          <label>item_id</label><input type="text" name="item_id" />
+        </div>
+        <div >
+          <label>count</label><input type="number" name="count" />
+        </div>
+        <div >
+          <label>greater_than</label><input type="number" name="greater_than" />
+        </div>
+        <div >
+          <label>less_than</label><input type="number" name="less_than" />
+        </div>
+        <div >
+          <label>updated_after</label><input type="number" name="updated_after" />
+        </div>
+        <div >
+          <label>updated_before</label><input type="number" name="updated_before" />
+        </div>
+        <div >
+          <label>offset</label><input type="number" name="offset" />
+        </div>
+        <div >
+          <label>order(optional by updated_at default:asc)</label>
+          <select name="order">
+            <option value=""></option> 
+            <option value="asc">asc</option>
+            <option value="desc">desc</option>
+          </select>
+        </div>
+        <div >
+          <label>ignore status(optional default:false, always false if viewer)</label>
+          <select name="ignore_status">
+            <option value=""></option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+        <div >
+          <label>ignore valid_after(optional default:false, always false if viewer)</label>
+          <select name="ignore_valid_after">
+            <option value=""></option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<h3>viewer api</h3>
+
+<div data-collapse class="api">
+    <h4>get users that can be accessed by viewer</h4>
+    <form class="carnation_api" action="/api/v1/viewer/users" method="GET">
+      <fieldset>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user">as user</input>
+        <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>post viewer likes item</h4>
+    <form class="carnation_api" action="/api/v1/viewer/like" method="POST">
+      <fieldset>
+        <div >
+          <label>item_id</label><input type="text" name="item_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user">as user</input>
+        <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>get viewer info</h4>
+    <form class="carnation_api" action="/api/v1/viewer" method="GET">
+      <fieldset>
+        <div >
+          <label>viewer_id</label><input type="text" name="viewer_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user">as user</input>
+        <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+</body>
+</html>
