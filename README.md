@@ -69,7 +69,7 @@ sudo gem install bundler
 <pre>
 $ cd magoch_server 
 $ bundle install --path vendor/bundle
-$ mysql -u root <migrate/initialize_database.sql (or create db in AWS admin console RDS)
+$ mysql -u root <db/initialize_database.sql (or create db in AWS admin console RDS)
 </pre>
 
 at very first time
