@@ -15,6 +15,19 @@ describe Carnation do
     @user = User.find(:email=>"test01@chikaku.com")
     @access_token = AccessToken.new(@user).save
     @token = @access_token.token
+
+    @signup_user = User.find(:email=>"signup@chikaku.com")
+    expect(@signup_user).not_to be(nil)
+    @signup_access_token = AccessToken.new(@signup_user).save
+    expect(@signup_access_token).not_to be(nil)
+    @signup_token = @access_token.token
+  end
+
+  describe "create new user" do
+    it "should fail with normal user token" do
+      post '/api/v1/user/create', {:email=>"test09@chikaku.com", :access_token=>@token}
+      expect(last_response).not_to be_ok
+    end
   end
 
   describe "get user info" do
@@ -99,6 +112,7 @@ describe Carnation do
 
   after do
     @access_token.destroy if @access_token
+    @signup_access_token.destroy if @signup_access_token
   end
 
 end

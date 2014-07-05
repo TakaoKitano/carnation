@@ -1,32 +1,36 @@
 require 'sequel'
 require 'mysql2'
 
-dbhost = ENV['CARNATION_MYSQL_HOST']
-if dbhost
-  p "dbhost=#{dbhost}"
-else
-  dbhost = "localhost"
+mysql_host = ENV['CARNATION_MYSQL_HOST']
+if not mysql_host
+  mysql_host = "localhost"
 end
-$DB = Sequel.connect("mysql2://carnation:aFx4mMHb3z7d6dy@#{dbhost}/carnationdb")
+p "CARNATION_MYSQL_HOST=#{mysql_host}"
+
+redis_host = ENV['CARNATION_REDIS_HOST']
+if not redis_host
+  redis_host = "localhost:6379"
+end
+p "CARNATION_REDIS_HOST=#{redis_host}"
+
+s3_bucket_name = ENV['CARNATION_S3_BUCKET_NAME']
+if not s3_bucket_name
+  s3_bucket_name = 'carnationtest'
+end
+p "CARNATION_S3_BUCKET_NAME=#{s3_bucket_name}"
+
+$DB = Sequel.connect("mysql2://carnation:aFx4mMHb3z7d6dy@#{mysql_host}/carnationdb")
 Sequel.default_timezone = :utc
 
 require 'resque'
-Resque.redis = 'localhost:6379'
+Resque.redis = "#{redis_host}"
 
 require 'aws-sdk'
 AWS.config(
   :access_key_id => 'AKIAI2ZSXBHOXAWRFCQA',
   :secret_access_key => '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',
   :region => 'ap-northeast-1')
-
 $s3 = AWS::S3.new
-
-name = ENV['CARNATION_S3_BUCKET_NAME']
-if name
-  p "bucket name=#{name}"
-else
-  name = 'carnationdata'
-end
-$bucket = $s3.buckets[name]
+$bucket = $s3.buckets[s3_bucket_name]
 
 
