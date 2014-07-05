@@ -15,7 +15,7 @@ Do not push the image to public hub.
 
 <pre>
 cd app
-sudo docker build -t tkitano/carnation.app .
+sudo docker build --no-cache -t tkitano/carnation.app .
 </pre>
 
 ## run carnation API server
