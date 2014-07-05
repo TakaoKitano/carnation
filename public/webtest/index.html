@@ -164,6 +164,22 @@ $(document).ready(function() {
     </form>
     <hr/>
 
+<h3>create user</h3>
+
+<div data-collapse class="api">
+    <h4>post /api/v1/user/create - create a new user</h4>
+    <form class="carnation_api" action="/api/v1/user/create" method="POST" >
+      <p>create a new user with the specified email. Caller must be a sigup user(please see db/builtin_accounts.rb)
+      </p>
+      <fieldset>
+        <div>
+          <label>email(mandatory)</label><input type="text" name="email"/>
+        </div>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+    </form>
+</div>
+
 <h3>query user</h3>
 
 <div data-collapse class="api">

@@ -152,6 +152,12 @@ class User < Sequel::Model(:users)
     return false
   end
 
+  def can_create_user()
+    return true if self.role == User::ROLE[:admin]
+    return true if self.role == User::ROLE[:signup]
+    return false
+  end
+
 end
 
 class Group < Sequel::Model(:groups)

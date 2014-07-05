@@ -48,6 +48,28 @@ class Carnation < Sinatra::Base
     halt 200
   end
 
+
+  #
+  # create a new user
+  #
+  post '/api/v1/user/create' do
+    halt(400, "access denied") unless @token.user_id
+    user = User.find(:id=>@token.user_id) 
+    halt(400, "access denied") unless user.can_create_user
+
+    #target = User.find(:email=>params[:email])
+    #halt(400, "user of sepcified email exists") if target
+
+    begin
+      target = User.create(:email=>params[:email])
+    rescue
+      halt(400, "user of sepcified email exists or bad thing happend")
+    end
+    @result[:id] = target.id
+    @result[:email] = target.email
+    JSON.generate(@result)
+  end
+
   #
   # get user info
   #
