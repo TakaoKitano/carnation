@@ -9,7 +9,7 @@ p "CARNATION_MYSQL_HOST=#{mysql_host}"
 
 redis_host = ENV['CARNATION_REDIS_HOST']
 if not redis_host
-  redis_host = "localhost:6379"
+  redis_host = "localhost"
 end
 p "CARNATION_REDIS_HOST=#{redis_host}"
 
@@ -23,7 +23,7 @@ $DB = Sequel.connect("mysql2://carnation:aFx4mMHb3z7d6dy@#{mysql_host}/carnation
 Sequel.default_timezone = :utc
 
 require 'resque'
-Resque.redis = "#{redis_host}"
+Resque.redis = "#{redis_host}:6379"
 
 require 'aws-sdk'
 AWS.config(
