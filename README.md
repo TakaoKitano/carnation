@@ -22,6 +22,38 @@ sudo apt-get -y update
 sudo apt-get -y install wget curl git pkg-config
 </pre>
 
+### nginx
+
+<pre>
+sudo apt-get -y install nginx
+</pre>
+
+modify /etc/nginx/nginx.conf
+
+<pre>
+        #
+        # carnation server
+        #
+        upstream carnation_server {
+            server localhost:9292 fail_timeout=0;
+        }
+        server {
+          server_name test.mago-ch.com;
+          root /home/carnation/magoch_server/public;
+          location /token {
+            proxy_pass http://carnation_server;
+          }
+          location /api/v1 {
+            proxy_pass http://carnation_server;
+          }
+          location /webtest {
+            auth_basic  "webtest access restricted";
+            auth_basic_user_file "/home/carnation/magoch_server/server/htpasswd.webtest";
+            try_files $uri $uri/ /index.html;
+          }
+        }
+</pre>
+
 ### redis for resque worker
 
 <pre>
@@ -53,10 +85,9 @@ $ git clone git@github.com:kajiwara321/magoch_server.git
 sudo apt-get -y install build-essential zlib1g-dev libssl-dev libreadline6-dev libyaml-dev
 mkdir ~/ruby
 cd  ~/ruby
-wget http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.1.tar.gz
-tar -xvzf ruby-2.1.1.tar.gz
-cd ruby-2.1.1
-patch -i mago_ch_server/doc/readline.patch
+wget http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
+tar -xvzf ruby-2.1.2.tar.gz
+cd ruby-2.1.2
 ./configure --prefix=/usr/local
 make && make check
 sudo make install
