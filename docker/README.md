@@ -3,22 +3,28 @@
 ## prepare base image
 
 This base image contains sshd server, build tools, mysql client, redis client and ruby.
+
 <pre>
 cd base
-sudo docker build -t tkitano/carnation.base .
+sudo docker build --rm=true -t tkitano/carnation.base .
+sudo docker push tkitano/carnation.base
 </pre>
 
 ## prepare app image
 
 This image contains the carnation application. 
-Do not push the image to public hub.
+Do not push the image to public hub. 
+You must first login to docker hub in order to push 'tkitano/carnation.app'.
+
+--no-cache is required as we always need to get fresh 'git clone'.
 
 <pre>
 cd app
-sudo docker build --no-cache -t tkitano/carnation.app .
+sudo docker build --no-cache --rm=true -t tkitano/carnation.app .
+sudo docker push tkitano/carnation.app
 </pre>
 
-## run carnation API server
+## deploy carnation API server
 
 - create AWS EC2 instance ubuntu 64bit
 - adduser carnation
@@ -54,6 +60,8 @@ sudo docker build --no-cache -t tkitano/carnation.app .
 </pre>
 
 ### deploy carnation server on an AWS EC2 instance
+
+You must first login to the docker hub to pull the latest images from 'tkitano/carnation.app' 
 
 <pre>
 cd /home/carnation/magoch_server/docker
