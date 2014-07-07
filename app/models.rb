@@ -381,6 +381,12 @@ class Item < Sequel::Model(:items)
   def create_image_derivatives(filepath, mime_type)
     original = Magick::Image.read(filepath).first.auto_orient
     return unless original
+    begin
+      timestr = original.get_exif_by_entry('DateTime')[0][1]
+      self.created_at = Time.parse(timestr.sub(':', '/').sub(':', '/')).to_i
+    rescue
+      p 'could not get exif DateTime'
+    end
     self.width = original.columns
     self.height = original.rows
     self.duration = 0
