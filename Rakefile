@@ -1,5 +1,4 @@
-
-
+require 'rake/packagetask'
 namespace :db do
   desc 'create mysql account and database'
   task :sqlinit do
@@ -76,6 +75,29 @@ namespace :server do
   desc 'stop unicorn server'
   task :stop do
     sh "cat server/unicorn.pid | xargs kill -QUIT"
+  end
+end
+
+Rake::PackageTask.new("magoch_server", :noversion) do |t|
+  t.package_dir = "docker/app"
+  t.package_files.exclude("vendor/**/*", "docker/**/*")
+  t.package_files.include("**/*")
+  t.need_tar = true
+end
+
+namespace :docker do
+  desc 'build images'
+  task :build do
+    sh 'cd docker/base && sudo docker build --rm=true -t tkitano/carnation.base .'
+    Rake::Task["package"].invoke
+    sh 'cd docker/app && sudo docker build --rm=true -t tkitano/carnation.app .'
+  end
+
+  desc 'push images'
+  task :push do
+    sh 'sudo docker login'
+    sh 'sudo docker push tkitano/carnation.base'
+    sh 'sudo docker push tkitano/carnation.app'
   end
 end
 
