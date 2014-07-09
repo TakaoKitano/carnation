@@ -57,7 +57,7 @@ end
 namespace :resque do
   desc 'start resque worker process'
   task :start do
-    sh 'bundle exec resque worker -c resque/resque.rc'
+    sh 'bundle exec resque worker -c resque/resque.rc >resque/worker.log &'
   end
 
   desc 'stop resque worker process'
@@ -69,7 +69,7 @@ end
 namespace :server do
   desc 'start unicorn server'
   task :start do
-    sh 'bundle exec unicorn -c unicorn.rb'
+    sh 'bundle exec unicorn -c unicorn.rb -D'
   end
 
   desc 'stop unicorn server'

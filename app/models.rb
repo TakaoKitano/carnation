@@ -360,14 +360,18 @@ class Item < Sequel::Model(:items)
     s3obj = $bucket.objects[item.path + item.extension]
     tmpfile = Tempfile.new(['item', item.extension])
     begin
+      p "downloading item"
       s3obj.read { |chunk|
         tmpfile.write(chunk)
         tmpfile.flush
       }
+      p "getting mime_type"
       mime_type = FileMagic.new(:mime_type).file(tmpfile.path)
       if mime_type.start_with?("image")
+        p "creating image derivatives"
         item.create_image_derivatives(tmpfile.path, mime_type)
       elsif mime_type.start_with?("video")
+        p "creating video derivatives"
         item.create_video_derivatives(tmpfile.path, mime_type)
       end
     rescue

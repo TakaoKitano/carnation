@@ -29,8 +29,11 @@ ADD magoch_server/Gemfile  /home/carnation/magoch_server/Gemfile
 ADD magoch_server/Gemfile.lock /home/carnation/magoch_server/Gemfile.lock
 WORKDIR /home/carnation/magoch_server
 RUN bundle install --path vendor/bundle
+
+USER root
 WORKDIR /home/carnation
 ADD magoch_server.tgz /home/carnation
+RUN chown -R carnation:carnation /home/carnation/magoch_server
 ENV PATH /usr/local/bin:$PATH
 
 #
@@ -39,5 +42,5 @@ ENV PATH /usr/local/bin:$PATH
 ENV CARNATION_S3_BUCKET_NAME carnationdata
 ENV CARNATION_MYSQL_HOST carnationdbinstance.cyn734ercsgb.ap-northeast-1.rds.amazonaws.com
 ENV CARNATION_REDIS_HOST carnationredis.xrr3n6.0001.apne1.cache.amazonaws.com
-
+USER carnation
 WORKDIR /home/carnation/magoch_server
