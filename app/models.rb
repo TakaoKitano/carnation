@@ -379,6 +379,7 @@ class Item < Sequel::Model(:items)
   end
 
   def create_image_derivatives(filepath, mime_type)
+    p "create_image_derivatives"
     original = Magick::Image.read(filepath).first.auto_orient
     return unless original
     begin
@@ -394,6 +395,7 @@ class Item < Sequel::Model(:items)
     self.mime_type = mime_type
     self.save
 
+    p "calling Derivative.generate_derivaties"
     Derivative.generate_derivatives(self.id, original)
 
   end
@@ -488,6 +490,7 @@ class Derivative < Sequel::Model(:derivatives)
         }
 
         total += bm.report("DB:") {
+          self.path = self.item.path + "_" + sprintf("%02d", self.index)
           self.name = name
           self.width = image.columns
           self.height = image.rows
