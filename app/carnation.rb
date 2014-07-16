@@ -282,7 +282,8 @@ class Carnation < Sinatra::Base
     valid_after = 0 if valid_after <= 0
 
     item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
-    item.status = Item::STATUS[:active]
+    # item.status will be changed by the create_derivatives worker
+    #item.status = Item::STATUS[:active]
     item.save
 
     p "item saved, registering a worker job for item:#{item.id}"

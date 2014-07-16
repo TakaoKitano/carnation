@@ -353,66 +353,73 @@ class Item < Sequel::Model(:items)
   end
 
   def self.create_derivatives(item_id)
-    p "create_and_upload_derivatives item_id=#{item_id}"
+    p "#{item_id}:create_and_upload_derivatives"
     item = Item.find(:id=>item_id)
     return nil unless item
+
+    #
+    # get lock
+    #
+    lock = $DLM.lock("create_derivatives:#{item_id}", 5 * 60 * 1000) # 5 minutes
+    if not lock 
+      p "#{item_id}:create_derivatives: could not get DLM lock"
+      return nil
+    end
 
     s3obj = $bucket.objects[item.path + item.extension]
     tmpfile = Tempfile.new(['item', item.extension])
     begin
-      p "downloading item"
+      p "#{item_id}:downloading item"
       s3obj.read { |chunk|
         tmpfile.write(chunk)
         tmpfile.flush
       }
-      p "getting mime_type"
+      p "#{item.id}:getting mime_type"
       mime_type = FileMagic.new(:mime_type).file(tmpfile.path)
       if mime_type.start_with?("image")
-        p "creating image derivatives"
+        p "#{item.id}:creating image derivatives"
         item.create_image_derivatives(tmpfile.path, mime_type)
       elsif mime_type.start_with?("video")
-        p "creating video derivatives"
+        p "#{item.id}:creating video derivatives"
         item.create_video_derivatives(tmpfile.path, mime_type)
       end
     rescue
-      p "error while reading S3 object item id=#{item.id}"
+      p "#{item.id}:error while reading S3 object"
     ensure
       tmpfile.close
       tmpfile.unlink
+      $DLM.unlock(lock)
     end
   end
 
   def create_image_derivatives(filepath, mime_type)
-    p "create_image_derivatives"
     original = Magick::Image.read(filepath).first.auto_orient
     return unless original
+
     begin
       timestr = original.get_exif_by_entry('DateTime')[0][1]
       self.created_at = Time.parse(timestr.sub(':', '/').sub(':', '/')).to_i
     rescue
-      p 'could not get exif DateTime'
+      p '#{self.id}:could not get exif DateTime'
     end
+
+    p "#{self.id}:calling Derivative.generate_derivaties"
+    result = Derivative.generate_derivatives(self.id, original)
+
     self.width = original.columns
     self.height = original.rows
     self.duration = 0
     self.filesize = File.size(filepath)
     self.mime_type = mime_type
+    self.status = Item::STATUS[:active] if result
     self.save
-
-    p "calling Derivative.generate_derivaties"
-    Derivative.generate_derivatives(self.id, original)
 
   end
 
   def create_video_derivatives(filepath, mime_type)
     movie = FFMPEG::Movie.new(filepath)
     return unless movie
-    self.width = movie.width
-    self.height = movie.height
-    self.duration = movie.duration
-    self.filesize = movie.size
-    self.mime_type = mime_type
-    self.save
+
 
     p "width=" + movie.width.to_s
     p "height="+ movie.height.to_s
@@ -432,10 +439,17 @@ class Item < Sequel::Model(:items)
         original.rotate!(rotation)
       end
       raise "error" unless original
-      Derivative.generate_derivatives(self.id, original)
+      result = Derivative.generate_derivatives(self.id, original)
+      self.width = movie.width
+      self.height = movie.height
+      self.duration = movie.duration
+      self.filesize = movie.size
+      self.mime_type = mime_type
+      self.status = Item::STATUS[:active] if result
+      self.save
 
     rescue
-      p "error while creating screenshot id=#{self.id}"
+      p "#{self.id}:error while creating screenshot"
 
     ensure
       tmpfile.close
@@ -470,19 +484,40 @@ class Derivative < Sequel::Model(:derivatives)
   end
 
   def self.generate_derivatives(item_id, original)
-    image = original.resize_to_fit(1920, 1080)
-    derivative = Derivative.find_or_create(:item_id=>item_id, :index=>1, :extension=>".png")
-    derivative.store_and_upload_file(image, "medium")
-    image.destroy!
+    result = true
+    begin
+      p "#{item_id}:generating medium"
+      image = original.resize_to_fit(1920, 1080)
+      derivative = Derivative.find_or_create(:item_id=>item_id, :index=>1, :extension=>".png")
+      result = derivative.store_and_upload_file(image, "medium")
+    rescue
+      p "#{item_id}:error while generating medium image"
+      result = false
+    ensure
+      if image
+        image.destroy!
+      end
+    end
 
-    image = original.resize_to_fill(100,100)
-    derivative = Derivative.find_or_create(:item_id=>item_id, :index=>2, :extension=>".png")
-    derivative.store_and_upload_file(image, "thumbnail")
-    image.destroy!
+    begin
+      p "#{item_id}:generating thumbnail"
+      image = original.resize_to_fill(100,100)
+      derivative = Derivative.find_or_create(:item_id=>item_id, :index=>2, :extension=>".png")
+      result = derivative.store_and_upload_file(image, "thumbnail")
+    rescue
+      p "#{item_id}:error while generating thumbnail image"
+      result = false
+    ensure
+      if image
+        image.destroy!
+      end
+    end
+    return result
   end
 
   def store_and_upload_file(image, name)
-
+    p "#{self.item_id}:store_and_upload_file"
+    result = true
     tmpfile = Tempfile.new(['derivatives', '.png'])
     filepath = tmpfile.path
     begin
@@ -510,11 +545,14 @@ class Derivative < Sequel::Model(:derivatives)
         }
         [total]
       end
+    rescue
+      p "#{self.item_id}:error in store_and_upload_file"
+      result = false
     ensure
       tmpfile.close
       tmpfile.unlink
     end
-    return true
+    return result
   end
 end
 

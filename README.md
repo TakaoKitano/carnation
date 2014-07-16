@@ -105,6 +105,10 @@ $ mysql -u root <db/initialize_database.sql (or create db in AWS admin console R
 
 at very first time
 
+export CARNATION_S3_BUCKET_NAME=carnationdata
+export CARNATION_MYSQL_HOST=carnationdbinstance.cyn734ercsgb.ap-northeast-1.rds.amazonaws.com
+export CARNATION_REDIS_HOST=carnationredis.xrr3n6.0001.apne1.cache.amazonaws.com
+
 <pre>
 $ rake db:migrate
 $ rake db:builtin_accounts
@@ -133,6 +137,12 @@ $ rake spec
 ### run server
 
 <pre>
+$ cd /home/carnation/magoch_server
+$ git pull origin master
+$ bundle install --path vendor/bundle
+$ export CARNATION_S3_BUCKET_NAME=carnationdata
+$ export CARNATION_MYSQL_HOST=carnationdbinstance.cyn734ercsgb.ap-northeast-1.rds.amazonaws.com
+$ export CARNATION_REDIS_HOST=carnationredis.xrr3n6.0001.apne1.cache.amazonaws.com
 $ rake resque:stop
 $ rake resque:start
 $ rake server:stop
