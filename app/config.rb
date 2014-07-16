@@ -24,7 +24,7 @@ Sequel.default_timezone = :utc
 
 require 'resque'
 Resque.redis = "redis://#{redis_host}:6379"
-Resque.logger.level = Logger::DEBUG
+Resque.logger.level = Logger::INFO
 require 'redlock'
 $DLM = Redlock.new("redis://#{redis_host}:6379")
 

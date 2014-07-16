@@ -353,23 +353,24 @@ class Item < Sequel::Model(:items)
   end
 
   def self.create_derivatives(item_id)
-    p "#{item_id}:create_and_upload_derivatives"
+    p "#{item_id}:create_derivatives"
     item = Item.find(:id=>item_id)
     return nil unless item
 
     #
     # get lock
     #
+    p "#{item_id}:getting DLM lock"
     lock = $DLM.lock("create_derivatives:#{item_id}", 5 * 60 * 1000) # 5 minutes
     if not lock 
-      p "#{item_id}:create_derivatives: could not get DLM lock"
+      p "#{item_id}: could not get DLM lock"
       return nil
     end
 
     s3obj = $bucket.objects[item.path + item.extension]
     tmpfile = Tempfile.new(['item', item.extension])
     begin
-      p "#{item_id}:downloading item"
+      p "#{item_id}:downloading item from S3"
       s3obj.read { |chunk|
         tmpfile.write(chunk)
         tmpfile.flush
@@ -516,39 +517,58 @@ class Derivative < Sequel::Model(:derivatives)
   end
 
   def store_and_upload_file(image, name)
-    p "#{self.item_id}:store_and_upload_file"
+    p "#{self.item_id}:store_and_upload_file #{name}"
     result = true
     tmpfile = Tempfile.new(['derivatives', '.png'])
     filepath = tmpfile.path
     begin
-      Benchmark.bm(8, "TOTAL:") do |bm|
+      p "#{self.item_id}:creating tempfile"
+      image.format = 'PNG'
+      image.write(filepath) 
 
-        total = bm.report("CREATE:") {
-          image.format = 'PNG'
-          image.write(filepath) 
-        }
+      p "#{self.item_id}:updating DB"
+      self.path = self.item.path + "_" + sprintf("%02d", self.index)
+      self.name = name
+      self.width = image.columns
+      self.height = image.rows
+      self.duration = 0
+      self.status = STATUS[:active]
+      self.filesize = File.size(filepath)
+      self.mime_type = "image/png"
+      self.save
 
-        total += bm.report("DB:") {
-          self.path = self.item.path + "_" + sprintf("%02d", self.index)
-          self.name = name
-          self.width = image.columns
-          self.height = image.rows
-          self.duration = 0
-          self.status = STATUS[:active]
-          self.filesize = File.size(filepath)
-          self.mime_type = "image/png"
-          self.save
-        }
+      p "#{self.item_id}:uploading to S3"
+      $bucket.objects[self.path + self.extension].write(:file => filepath)
 
-        total += bm.report("UPLOAD:") {
-          $bucket.objects[self.path + self.extension].write(:file => filepath)
-        }
-        [total]
-      end
+#      Benchmark.bm(8, "TOTAL:") do |bm|
+#
+#        total = bm.report("CREATE:") {
+#          image.format = 'PNG'
+#          image.write(filepath) 
+#        }
+#
+#        total += bm.report("DB:") {
+#          self.path = self.item.path + "_" + sprintf("%02d", self.index)
+#          self.name = name
+#          self.width = image.columns
+#          self.height = image.rows
+#          self.duration = 0
+#          self.status = STATUS[:active]
+#          self.filesize = File.size(filepath)
+#          self.mime_type = "image/png"
+#          self.save
+#        }
+#
+#        total += bm.report("UPLOAD:") {
+#          $bucket.objects[self.path + self.extension].write(:file => filepath)
+#        }
+#        [total]
+#      end
     rescue
       p "#{self.item_id}:error in store_and_upload_file"
       result = false
     ensure
+      p "#{self.item_id}:removing tmpfile"
       tmpfile.close
       tmpfile.unlink
     end
