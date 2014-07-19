@@ -16,11 +16,9 @@ This image contains the carnation application.
 Do not push the image to public hub. 
 You must first login to docker hub in order to push 'tkitano/carnation.app'.
 
---no-cache is required as we always need to get fresh 'git clone'.
-
 <pre>
 cd app
-sudo docker build --no-cache --rm=true -t tkitano/carnation.app .
+sudo docker build --rm=true -t tkitano/carnation.app .
 sudo docker push tkitano/carnation.app
 </pre>
 
@@ -65,8 +63,16 @@ You must first login to the docker hub to pull the latest images from 'tkitano/c
 
 <pre>
 cd /home/carnation/magoch_server/docker
-sudo docker run -d -p 9292:9292 -t tkitano/carnation.app rake server:start
-sudo docker run -d -t tkitano/carnation.app rake resque:start
+sudo docker run -d -p 9292:9292 -t tkitano/carnation.app bundle exec unicorn -c unicorn.rb
+sudo docker run -d -t tkitano/carnation.app bundle exec resque worker -c resque/resque.rc
+</pre>
+
+### test carnation server on an AWS EC2 instance
+
+<pre>
+cd /home/carnation/magoch_server/docker
+sudo docker run -d --env-file=test.env -p 9292:9292 -t tkitano/carnation.app bundle exec unicorn -c unicorn.rb
+sudo docker run -d --env-file=test.env -t tkitano/carnation.app bundle exec resque worker -c resque/resque.rc
 </pre>
 
 ### test carnation server on a local machine

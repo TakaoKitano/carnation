@@ -4,5 +4,5 @@ pid_file: 'resque/resque.pid'
 fork_per_job: true
 interval: 5
 daemon: false
-timeout: 900
+timeout: 5
 graceful_term: true
