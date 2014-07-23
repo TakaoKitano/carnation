@@ -167,9 +167,9 @@ $(document).ready(function() {
 <h3>create user</h3>
 
 <div data-collapse class="api">
-    <h4>post /api/v1/user/create - create a new user</h4>
+    <h4>POST /api/v1/user/create - create a new user</h4>
     <form class="carnation_api" action="/api/v1/user/create" method="POST" >
-      <p>create a new user with the specified email. Caller must be a sigup user(please see db/builtin_accounts.rb)
+      <p>The behavior of this api will be soon modified. DO NOT USE. create a new user with the specified email. Caller must be a sigup user(please see db/builtin_accounts.rb)
       </p>
       <fieldset>
         <div>
@@ -183,7 +183,7 @@ $(document).ready(function() {
 <h3>query user</h3>
 
 <div data-collapse class="api">
-    <h4>get user info - user情報の取得</h4>
+    <h4>GET /api/v1/user - get user info</h4>
     <form class="carnation_api" action="/api/v1/user" method="GET" >
       <p>userの情報を取得します。存在しない user_id を指定した場合は、404 が返ります。</p>
       <fieldset>
@@ -199,7 +199,7 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>get user id by email - email による user id の取得</h4>
+    <h4>GET /api/v1/user_by_email - retrieve user id by email</h4>
     <form class="carnation_api" action="/api/v1/user_by_email" method="GET">
       <p>user_id を取得します。指定されたemailをもつ user が存在しない場合は、404が返ります。</p>
       <fieldset>
@@ -217,11 +217,11 @@ $(document).ready(function() {
 <h3>upload item</h3>
 
 <div data-collapse class="api">
-    <h4>post initiate item upload - item upload の開始</h4>
+    <h4>POST /api/v1/item/initiate -  initiate item upload</h4>
     <form class="carnation_api" action="/api/v1/item/initiate" method="POST">
       <p>item のアップロードを開始します。以前にこの API を呼んで item id を取得済みの場合に、再度 upload 用の url を取得する場合は、item_id を指定してください。(画像を更新したい場合とかに）取得した url に対して、curl でアップロードするさいには次のようにします
       <pre>
-        curl --upload-file filename url
+        curl --upload-file filename url (you may need to enclose the url with quotation marks as the url may contain '&' character)
       </pre>
  プログラムからは HTTP PUT でアップロードを行います.アップロードが完了したら、/api/v1/item/activate(notify upload completed) を呼んでアップロード完了をサーバーに通知してください.
       </p>
@@ -261,7 +261,7 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>initiate item upload with browser (test purpose only) </h4>
+    <h4>POST /api/vi/item/initiate_post  - initiate item upload with browser (test purpose only) </h4>
     <form  action="/api/v1/item/initiate_post" method="POST" target="upload">
       <fieldset>
         <div >
@@ -289,25 +289,26 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>active item - notify upload completed - アップロード完了の通知</h4>
+    <h4>PUT /api/v1/item/activate - active item:notify upload completed</h4>
     <form class="carnation_api" action="/api/v1/item/activate" method="PUT">
       <fieldset>
         <div >
           <label>item_id</label><input type="text" name="item_id"/>
+          mandatory
         </div>
         <div >
           <label>valid_after</label><input type="text" name="valid_after"/>
+          optional - specifies seconds to make item valid (to viewer), e.g. 600 (valid after 10 minitues). default:0 (valid immediately)
         </div>
         <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
-        <input type="radio" name="tokentype" value="viewer">as viewer</input>
       </fieldset>
     </form>
 </div>
 
 <div data-collapse class="api">
-    <h4>delete item - item の削除</h4>
+    <h4>DELETE /api/vi/item - delete an item</h4>
     <form class="carnation_api" action="/api/v1/item" method="DELETE">
       <p>itemを削除します。item activate の前によばれた場合は、アイテムのレコードを完全に削除します。そうでない場合は item.status が deleted 状態になりますが、データとしては削除されません
       </p>
@@ -324,7 +325,7 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>undelete item - item の削除のキャンセル</h4>
+    <h4>PUT /api/v1/item/undelete - undelete item:cancel item deletion</h4>
     <form class="carnation_api" action="/api/v1/item/undelete" method="PUT">
       <p>削除した item を復活します。(activate する前にdeleteしたアイテムは復活できません）
       </p>
@@ -341,10 +342,10 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>get item - 個別 item の取得</h4>
+    <h4>GET /api/v1/item  - retrieve single item</h4>
     <form class="carnation_api" action="/api/v1/item" method="GET">
       <p>
-        item を取得します。
+        retrieve item 
       </p>
       <fieldset>
         <div >
@@ -361,58 +362,86 @@ $(document).ready(function() {
 <h3>get items</h3>
 
 <div data-collapse class="api">
-    <h4>get user items</h4>
+    <h4>GET /api/v1/user/items - get user items</h4>
     <form class="carnation_api" action="/api/v1/user/items" method="GET">
       <fieldset>
         <div >
           <label>user_id</label><input type="text" name="user_id"/>
+          mandatory
         </div>
         <div >
           <label>item_id</label><input type="text" name="item_id" />
+          optional - if specified, all other filter parameters are ignored
         </div>
         <div >
           <label>count</label><input type="number" name="count" />
+          optional - default:20, max:200
         </div>
         <div >
           <label>greater_than</label><input type="number" name="greater_than" />
+          optional - filter with id
         </div>
         <div >
           <label>less_than</label><input type="number" name="less_than" />
+          optional - filter with id
         </div>
         <div >
           <label>created_after</label><input type="number" name="created_after" />
+          optional - unix epoch time e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
         </div>
         <div >
           <label>created_before</label><input type="number" name="created_before" />
+          optional - unix epoch time e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+        </div>
+        <div >
+          <label>updated_after</label><input type="number" name="updated_after" />
+          optional - unix epoch time e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+        </div>
+        <div >
+          <label>updated_before</label><input type="number" name="updated_before" />
+          optional - unix epoch time e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
         </div>
         <div >
           <label>offset</label><input type="number" name="offset" />
+          optional - default:0
         </div>
         <div >
-          <label>order(optional by created_at default:asc)</label>
+          <label>order</label>
           <select name="order">
             <option value=""></option> 
             <option value="asc">asc</option>
             <option value="desc">desc</option>
           </select>
+          optional - sort with the 'order_by' parameter default:asc (older first)
         </div>
         <div >
-          <label>ignore status(optional default:false, always false if viewer)</label>
+          <label>order_by</label>
+          <select name="order_by">
+            <option value=""></option> 
+            <option value="created_at">created_at</option>
+            <option value="updated_at">updated_at</option>
+          </select>
+          <label>optional -  the column for specifying order default:created_at</label>
+        </div>
+        <div >
+          <label>ignore_status</label>
           <select name="ignore_status">
             <option value=""></option>
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
+          <label>optional -  default:false, always false if called by viewer</label>
         </div>
         <div >
-          <label>ignore valid_after(optional default:false, always false if viewer)</label>
+          <label>ignore_valid_after</label>
           <select name="ignore_valid_after">
             <option value=""></option>
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
+          <label>optional -  default:false, always false if called by viewer</label>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="4" >method,url,parameters are shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -423,7 +452,7 @@ $(document).ready(function() {
 <h3>viewer api</h3>
 
 <div data-collapse class="api">
-    <h4>get users that can be accessed by viewer</h4>
+    <h4>GET /api/v1/viewer/users - retrieve users that can be accessed by viewer</h4>
     <form class="carnation_api" action="/api/v1/viewer/users" method="GET">
       <fieldset>
         <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
@@ -435,7 +464,7 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>post viewer likes item</h4>
+    <h4>POST /api/v1/viewer/like - post viewer likes item</h4>
     <form class="carnation_api" action="/api/v1/viewer/like" method="POST">
       <fieldset>
         <div >
@@ -450,7 +479,7 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>get viewer info</h4>
+    <h4>GET /api/v1/viewer -  get viewer info</h4>
     <form class="carnation_api" action="/api/v1/viewer" method="GET">
       <fieldset>
         <div >
