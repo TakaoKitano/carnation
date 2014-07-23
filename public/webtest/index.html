@@ -441,6 +441,15 @@ $(document).ready(function() {
           </select>
           <label>optional -  default:false, always false if called by viewer</label>
         </div>
+        <div >
+          <label>no_details</label>
+          <select name="no_details">
+            <option value=""></option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+          <label>optional -  default:false, if this parameter is true, only ids are returned </label>
+        </div>
         <textarea id="parameters" readonly cols="80" rows="4" >method,url,parameters are shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>

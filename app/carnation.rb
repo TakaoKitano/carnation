@@ -372,9 +372,18 @@ class Carnation < Sinatra::Base
       end
     end
 
+    id_only = false
+    if params[:no_details] == "true"
+      id_only = true
+    end
+
     items = []
     ds.all.each do |item|
-      items << item.to_result_hash
+      if id_only 
+        items << {:id=>item.id}
+      else
+        items << item.to_result_hash
+      end
     end
 
     @result[:user_id] = owner.id
