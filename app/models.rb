@@ -489,7 +489,7 @@ class Derivative < Sequel::Model(:derivatives)
     begin
       p "#{item_id}:generating medium"
       image = original.resize_to_fit(1920, 1080)
-      derivative = Derivative.find_or_create(:item_id=>item_id, :index=>1, :extension=>".png")
+      derivative = Derivative.find_or_create(:item_id=>item_id, :index=>1)
       result = derivative.store_and_upload_file(image, "medium")
     rescue
       p "#{item_id}:error while generating medium image"
@@ -498,12 +498,15 @@ class Derivative < Sequel::Model(:derivatives)
       if image
         image.destroy!
       end
+      if not result
+        derivative.destroy
+      end
     end
 
     begin
       p "#{item_id}:generating thumbnail"
       image = original.resize_to_fill(100,100)
-      derivative = Derivative.find_or_create(:item_id=>item_id, :index=>2, :extension=>".png")
+      derivative = Derivative.find_or_create(:item_id=>item_id, :index=>2)
       result = derivative.store_and_upload_file(image, "thumbnail")
     rescue
       p "#{item_id}:error while generating thumbnail image"
@@ -512,6 +515,9 @@ class Derivative < Sequel::Model(:derivatives)
       if image
         image.destroy!
       end
+      if not result
+        derivative.destroy
+      end
     end
     return result
   end
@@ -519,51 +525,36 @@ class Derivative < Sequel::Model(:derivatives)
   def store_and_upload_file(image, name)
     p "#{self.item_id}:store_and_upload_file #{name}"
     result = true
-    tmpfile = Tempfile.new(['derivatives', '.png'])
+    tmpfile = Tempfile.new(['derivatives', '.jpg'])
     filepath = tmpfile.path
     begin
       p "#{self.item_id}:creating tempfile"
-      image.format = 'PNG'
+      image.format = 'JPEG'
       image.write(filepath) 
 
-      p "#{self.item_id}:updating DB"
-      self.path = self.item.path + "_" + sprintf("%02d", self.index)
-      self.name = name
-      self.width = image.columns
-      self.height = image.rows
-      self.duration = 0
-      self.status = STATUS[:active]
-      self.filesize = File.size(filepath)
-      self.mime_type = "image/png"
-      self.save
+      begin
+	p "#{self.item_id}:updating DB"
+	self.path = self.item.path + "_" + sprintf("%02d", self.index)
+	self.name = name
+	self.extension = ".jpg"
+	self.width = image.columns
+	self.height = image.rows
+	self.duration = 0
+	self.status = STATUS[:active]
+	self.filesize = File.size(filepath)
+	self.mime_type = "image/jpeg"
+	self.save
+      rescue
+        p "#{self.item_id}:error while saving to DB"
+      end
 
-      p "#{self.item_id}:uploading to S3"
-      $bucket.objects[self.path + self.extension].write(:file => filepath)
+      begin
+	p "#{self.item_id}:uploading to S3"
+	$bucket.objects[self.path + self.extension].write(:file => filepath)
+      rescue
+        p "#{self.item_id}:error while uploading to DB"
+      end
 
-#      Benchmark.bm(8, "TOTAL:") do |bm|
-#
-#        total = bm.report("CREATE:") {
-#          image.format = 'PNG'
-#          image.write(filepath) 
-#        }
-#
-#        total += bm.report("DB:") {
-#          self.path = self.item.path + "_" + sprintf("%02d", self.index)
-#          self.name = name
-#          self.width = image.columns
-#          self.height = image.rows
-#          self.duration = 0
-#          self.status = STATUS[:active]
-#          self.filesize = File.size(filepath)
-#          self.mime_type = "image/png"
-#          self.save
-#        }
-#
-#        total += bm.report("UPLOAD:") {
-#          $bucket.objects[self.path + self.extension].write(:file => filepath)
-#        }
-#        [total]
-#      end
     rescue
       p "#{self.item_id}:error in store_and_upload_file"
       result = false
