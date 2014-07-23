@@ -472,9 +472,14 @@ class Derivative < Sequel::Model(:derivatives)
   end
 
   def presigned_url(method_symbol)
-    s3obj = $bucket.objects[self.path + self.extension]
-    ps = AWS::S3::PresignV4.new(s3obj)
-    uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
+    begin
+      s3obj = $bucket.objects[self.path + self.extension]
+      ps = AWS::S3::PresignV4.new(s3obj)
+      uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
+    rescue
+      p "#{self.item_id}:error when generating presigned_url for derivative"
+      uri = ""
+    end
     uri.to_s
   end
 
