@@ -343,6 +343,14 @@ class Carnation < Sinatra::Base
       if created_after > 0
         ds = ds.where('created_at > ?', created_after)
       end
+      updated_before = params["updated_before"].to_i
+      if updated_before > 0
+        ds = ds.where('updated_at < ?', updated_before)
+      end
+      updated_after = params["updated_after"].to_i
+      if updated_after > 0
+        ds = ds.where('updated_at > ?', updated_after)
+      end
       offset = params["offset"].to_i
       if offset > 0
         ds = ds.offset(offset)
@@ -351,10 +359,16 @@ class Carnation < Sinatra::Base
       count = 20 if count == 0
       count = 200 if count > 200
       ds = ds.limit(count)
+
+      sort_by = "created_at"
+      if params[:order_by] == "updated_at"
+        sort_by = "updated_at"
+      end
+
       if params[:order] == "desc"
-        ds = ds.order(Sequel.desc(:created_at))
+        ds = ds.order(Sequel.desc(sort_by.to_sym))
       else
-        ds = ds.order(Sequel.asc(:created_at))
+        ds = ds.order(Sequel.asc(sort_by.to_sym))
       end
     end
 
