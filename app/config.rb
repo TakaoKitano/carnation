@@ -23,8 +23,13 @@ $DB = Sequel.connect("mysql2://carnation:aFx4mMHb3z7d6dy@#{mysql_host}/carnation
 Sequel.default_timezone = :utc
 
 require 'resque'
+require 'resque-retry'
+require 'resque-timeout'
 Resque.redis = "redis://#{redis_host}:6379"
+Resque.logger = Logger.new(STDOUT)
 Resque.logger.level = Logger::INFO
+#Resque.logger.level = Logger::DEBUG
+Resque::Plugins::Timeout.timeout = 900
 require 'redlock'
 $DLM = Redlock.new("redis://#{redis_host}:6379")
 
