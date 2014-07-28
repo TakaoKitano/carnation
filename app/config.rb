@@ -1,6 +1,9 @@
 require 'sequel'
 require 'mysql2'
 
+$logger = Logger.new(STDOUT)
+$logger.level = Logger::INFO
+
 mysql_host = ENV['CARNATION_MYSQL_HOST']
 if not mysql_host
   mysql_host = "localhost"
@@ -23,8 +26,11 @@ $DB = Sequel.connect("mysql2://carnation:aFx4mMHb3z7d6dy@#{mysql_host}/carnation
 Sequel.default_timezone = :utc
 
 require 'resque'
+require 'resque-retry'
+require 'resque-timeout'
 Resque.redis = "redis://#{redis_host}:6379"
-Resque.logger.level = Logger::INFO
+Resque.logger = $logger
+Resque::Plugins::Timeout.timeout = 900
 require 'redlock'
 $DLM = Redlock.new("redis://#{redis_host}:6379")
 

@@ -69,8 +69,46 @@
     });
   }
 
+  var save_credentials = function() {
+    var storage = window.localStorage;
+    storage.setItem("carnation.user.email", $("#email").val());
+    storage.setItem("carnation.user.password", $("#password").val());
+    storage.setItem("carnation.viewer.appid", $("appid").val());
+    storage.setItem("carnation.viewer.secret", $("secret").val());
+  }
+
+  var restore_credentials = function() {
+    var storage = window.localStorage;
+    $("#email").val(storage.getItem("carnation.user.email"));
+    $("#password").val(storage.getItem("carnation.user.password"));
+    $("#appid").val(storage.getItem("carnation.viewer.appid"));
+    $("#secret").val(storage.getItem("carnation.viewer.secret"));
+   
+    //
+    // default values for testing
+    //
+    if ($("#email").val() == "undefined"     || $("#email").val().length == 0 ||
+        $("#password").val()  == "undefined" || $("#password").val().length == 0) 
+    {
+      $("#email").val("test01@chikaku.com");
+      $("#password").val("dx7PnxqDZ5kr");
+    }
+    if ( $("#appid").val() == "undefined"   || $("#appid").val().length == 0 ||
+         $("#secret").val()  == "undefined" || $("#secret").val().length  == 0 )
+    {
+      $("#appid").val("6052d5885f9c2a12c09ef90f815225d3");
+      $("#secret").val("f6af879a7db8bfbe183e08c1a68e9035");
+    }
+  }
+
+  var get_resque_host = function() {
+    url =  "http://" + window.location.hostname + ":9292/overview";
+    $("#resque").attr("href", url);
+  }
+
 $(document).ready(function() {
 
+  restore_credentials();
   get_user_token($('#get_user_token'));
   get_viewer_token($('#get_viewer_token'));
 
@@ -101,6 +139,8 @@ $(document).ready(function() {
     carnation.callapi(form, token);
   });
 
+  get_resque_host();
+
 });
 </script>
 
@@ -116,11 +156,11 @@ $(document).ready(function() {
       <fieldset>
         <div>
             <label for="email">email</label>
-            <input id="email" type="text" value="test01@chikaku.com" name="email">
+            <input id="email" type="text" name="email">
         </div>
         <div>
             <label for="password">password</label>
-            <input id="password" type="text" value="dx7PnxqDZ5kr" name="password">
+            <input id="password" type="text" name="password">
         </div>
         <ul>
           <li>user_id=<span id="user_id"></span></li>
@@ -140,11 +180,11 @@ $(document).ready(function() {
       <fieldset>
         <div>
           <label for="appid">appid</label>
-          <input id="appid" type="text" value="6052d5885f9c2a12c09ef90f815225d3" name="appid" size="40"/>
+          <input id="appid" type="text" name="appid" size="40"/>
         </div>
         <div>
           <label for="secret">secret</label>
-          <input id="secret" type="text" value="f6af879a7db8bfbe183e08c1a68e9035" name="secret" size="40"/>
+          <input id="secret" type="text" name="secret" size="40"/>
         </div>
         <ul>
           <li>viewer_id=<span id="viewer_id"></span></li>
@@ -160,8 +200,12 @@ $(document).ready(function() {
 
     <form action="result.html" method="GET" target="result">
       <input  type="button" value="clear token" onclick="reset_tokens()">
+      <input  type="button" value="save credentials" onclick="save_credentials()">
+      <input  type="button" value="restore credentials" onclick="restore_credentials()">
       <input  type="submit" value="open result window"/>
     </form>
+    <hr/>
+    <a id="resque" href="" target="blank">open resque worker status</a>
     <hr/>
 
 <h3>create user</h3>
@@ -169,7 +213,7 @@ $(document).ready(function() {
 <div data-collapse class="api">
     <h4>POST /api/v1/user/create - create a new user</h4>
     <form class="carnation_api" action="/api/v1/user/create" method="POST" >
-      <p>The behavior of this api will be soon modified. DO NOT USE. create a new user with the specified email. Caller must be a sigup user(please see db/builtin_accounts.rb)
+      <p>The behavior of this api will be soon modified. DO NOT USE. create a new user with the specified email. Caller must be a signup user(please see db/builtin_accounts.rb)
       </p>
       <fieldset>
         <div>
@@ -266,9 +310,11 @@ $(document).ready(function() {
       <fieldset>
         <div >
           <label>user_id</label><input type="text" name="user_id" />
+          mandatory
         </div>
         <div >
           <label>item_id</label><input type="text" name="item_id" />
+          optional (required if you are retrying to upload same file again)
         </div>
         <div >
           <label>extension</label>

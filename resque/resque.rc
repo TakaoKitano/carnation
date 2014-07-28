@@ -1,8 +1,0 @@
-queues: 'default'
-require: 'resque/worker.rb'
-pid_file: 'resque/resque.pid'
-fork_per_job: true
-interval: 5
-daemon: false
-timeout: 5
-graceful_term: true
