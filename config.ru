@@ -5,6 +5,7 @@ $LOAD_PATH.unshift(appdir) unless $LOAD_PATH.include?(appdir)
 
 require 'token'
 require 'carnation'
+require 'resque/server'
 
 class Webtest < Sinatra::Base
   
@@ -14,5 +15,5 @@ class Webtest < Sinatra::Base
 
 end
 
-run Rack::Cascade.new [Webtest, Token, Carnation]
+run Rack::Cascade.new [Resque::Server, Webtest, Token, Carnation]
 
