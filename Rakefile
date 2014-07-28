@@ -57,12 +57,12 @@ end
 namespace :resque do
   desc 'start resque worker process'
   task :start do
-    sh 'bundle exec resque worker -c resque/resque.rc >resque/worker.log 2>&1 &'
+    sh 'bundle exec ruby resque/launch_resque_worker.rb >>resque/worker.log 2>&1 &'
   end
 
   desc 'stop resque worker process'
   task :stop do
-    sh "kill -9 `cat resque/resque.pid`"
+    sh "kill -15 `cat resque/worker.pid`"
   end
 end
 
