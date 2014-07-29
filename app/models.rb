@@ -355,16 +355,27 @@ class Item < Sequel::Model(:items)
   end
 
   def presigned_url(method_symbol)
-    s3obj = $bucket.objects[self.path + self.extension]
-    ps = AWS::S3::PresignV4.new(s3obj)
-    uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
+    begin
+      s3obj = $bucket.objects[self.path + self.extension]
+      ps = AWS::S3::PresignV4.new(s3obj)
+      uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
+    rescue
+      $logger.info "#{self.id}:error when generating presigned_url"
+      uri = ""
+    end
     uri.to_s
   end
 
   def self.create_derivatives(item_id)
-    $logger.info "#{item_id}:create_derivatives"
+    $logger.info "#{item_id}:Item.create_derivatives"
+
     item = Item.find(:id=>item_id)
-    return nil unless item
+    return false unless item
+
+    if item.status == Item::STATUS[:deleted]
+      $logger.info "#{item_id}:could not create derivatives for a deleted item"
+      return false
+    end
 
     #
     # get lock
@@ -373,47 +384,56 @@ class Item < Sequel::Model(:items)
     lock = $DLM.lock("create_derivatives:#{item_id}", 5 * 60 * 1000) # 5 minutes
     if not lock 
       $logger.info "#{item_id}: could not get DLM lock"
-      return nil
+      return false
     end
 
-    s3obj = $bucket.objects[item.path + item.extension]
-    tmpfile = Tempfile.new(['item', item.extension])
+    result = false
     begin
+      #
+      # download the file from S3 to a tempfile
+      # 
+      tmpfile = Tempfile.new(['item', item.extension])
       $logger.info "#{item_id}:downloading item from S3"
+      s3obj = $bucket.objects[item.path + item.extension]
       s3obj.read { |chunk|
         tmpfile.write(chunk)
         tmpfile.flush
       }
+
+      #
+      # create image or video derivatives
+      # 
       $logger.info "#{item.id}:getting mime_type"
       mime_type = FileMagic.new(:mime_type).file(tmpfile.path)
       if mime_type.start_with?("image")
-        $logger.info "#{item.id}:creating image derivatives"
-        item.create_image_derivatives(tmpfile.path, mime_type)
+        result = item.create_image_derivatives(tmpfile.path, mime_type)
       elsif mime_type.start_with?("video")
-        $logger.info "#{item.id}:creating video derivatives"
-        item.create_video_derivatives(tmpfile.path, mime_type)
+        result = item.create_video_derivatives(tmpfile.path, mime_type)
       end
     rescue
-      $logger.info "#{item.id}:error while reading S3 object"
+      $logger.info "#{item.id}:error while creating derivatives"
+      result = false
     ensure
-      tmpfile.close
-      tmpfile.unlink
+      tmpfile.close if tmpfile
+      tmpfile.unlink if tmpfile
       $DLM.unlock(lock)
     end
+    $logger.info "#{item_id}:create_derivatives returns #{result}"
+    return result
   end
 
   def create_image_derivatives(filepath, mime_type)
+    $logger.info "#{self.id}:creating image derivatives"
     original = Magick::Image.read(filepath).first.auto_orient
-    return unless original
+    return false unless original
 
     begin
       timestr = original.get_exif_by_entry('DateTime')[0][1]
       self.created_at = Time.parse(timestr.sub(':', '/').sub(':', '/')).to_i
     rescue
-      p '#{self.id}:could not get exif DateTime'
+      $logger.debug "#{self.id}:(not fatal)could not get exif DateTime"
     end
 
-    $logger.info "#{self.id}:calling Derivative.generate_derivaties"
     result = Derivative.generate_derivatives(self.id, original)
 
     self.width = original.columns
@@ -424,48 +444,49 @@ class Item < Sequel::Model(:items)
     self.status = Item::STATUS[:active] if result
     self.save
 
+    $logger.info "#{self.id}:create_image_derivatives returns #{result}"
+    return result
   end
 
   def create_video_derivatives(filepath, mime_type)
+    $logger.info "#{self.id}:creating video derivatives"
     movie = FFMPEG::Movie.new(filepath)
     return unless movie
 
-
-    $logger.info "width=" + movie.width.to_s
-    $logger.info "height="+ movie.height.to_s
-    $logger.info "duration=" + movie.duration.to_s
+    result = false
+    $logger.info "#{self.id}: width=#{movie.width} height=#{movie.height} duration=#{movie.duration}"
     rotation = 0
-    e = Exiftool.new(filepath)
-    if e
-      rotation = e.to_hash[:rotation]
-      $logger.info "rotation=" + rotation.to_s if rotation
+    exif = Exiftool.new(filepath)
+    if exif
+      rotation = exif.to_hash[:rotation]
+      $logger.info "#{self.id}:rotation=#{rotation}" if rotation
     end 
+
     begin
       tmpfile = Tempfile.new(['screenshot', '.png'])
       seeksec = [[0, movie.duration-1].max, 3].min
       movie.screenshot(tmpfile.path, {:seek_time=>seeksec, :resolution=>"#{movie.width}x#{movie.height}"})
       original = Magick::Image.read(tmpfile.path).first
-      if (rotation && rotation != 0)
-        original.rotate!(rotation)
+      if original
+        original.rotate!(rotation) if (rotation && rotation != 0)
+        result = Derivative.generate_derivatives(self.id, original)
+        self.width = movie.width
+        self.height = movie.height
+        self.duration = movie.duration
+        self.filesize = movie.size
+        self.mime_type = mime_type
+        self.status = Item::STATUS[:active] if result
+        self.save
       end
-      raise "error" unless original
-      result = Derivative.generate_derivatives(self.id, original)
-      self.width = movie.width
-      self.height = movie.height
-      self.duration = movie.duration
-      self.filesize = movie.size
-      self.mime_type = mime_type
-      self.status = Item::STATUS[:active] if result
-      self.save
 
     rescue
       $logger.info "#{self.id}:error while creating screenshot"
-
+      result = false
     ensure
       tmpfile.close
       tmpfile.unlink
     end
-
+    return result
   end
 end
 
@@ -513,6 +534,7 @@ class Derivative < Sequel::Model(:derivatives)
         image.destroy!
       end
       if not result
+        $logger.info "#{item_id}:deleting derivative"
         derivative.destroy
       end
     end
@@ -530,43 +552,50 @@ class Derivative < Sequel::Model(:derivatives)
         image.destroy!
       end
       if not result
+        $logger.info "#{item_id}:deleting derivative"
         derivative.destroy
       end
     end
+    
+    $logger.info "#{item_id}:generate_derivatives returns #{result}"
     return result
   end
 
   def store_and_upload_file(image, name)
     $logger.info "#{self.item_id}:store_and_upload_file #{name}"
     result = true
-    tmpfile = Tempfile.new(['derivatives', '.jpg'])
-    filepath = tmpfile.path
     begin
       $logger.info "#{self.item_id}:creating tempfile"
+      tmpfile = Tempfile.new(['derivatives', '.jpg'])
+      filepath = tmpfile.path
       image.format = 'JPEG'
       image.write(filepath) 
 
       begin
-	$logger.info "#{self.item_id}:updating DB"
-	self.path = self.item.path + "_" + sprintf("%02d", self.index)
-	self.name = name
-	self.extension = ".jpg"
-	self.width = image.columns
-	self.height = image.rows
-	self.duration = 0
-	self.status = STATUS[:active]
-	self.filesize = File.size(filepath)
-	self.mime_type = "image/jpeg"
-	self.save
+        $logger.info "#{self.item_id}:updating DB"
+        self.path = self.item.path + "_" + sprintf("%02d", self.index)
+        self.name = name
+        self.extension = ".jpg"
+        self.width = image.columns
+        self.height = image.rows
+        self.duration = 0
+        self.status = STATUS[:active]
+        self.filesize = File.size(filepath)
+        self.mime_type = "image/jpeg"
+        self.save
       rescue
         $logger.info "#{self.item_id}:error while saving to DB"
+        result = false
       end
 
-      begin
-	$logger.info "#{self.item_id}:uploading to S3"
-	$bucket.objects[self.path + self.extension].write(:file => filepath)
-      rescue
-        $logger.info "#{self.item_id}:error while uploading to DB"
+      if result
+        begin
+          $logger.info "#{self.item_id}:uploading to S3"
+          $bucket.objects[self.path + self.extension].write(:file => filepath)
+        rescue
+          $logger.info "#{self.item_id}:error while uploading to S3"
+          result = false
+        end
       end
 
     rescue
