@@ -8,12 +8,17 @@ require 'carnation'
 require 'resque/server'
 
 class Webtest < Sinatra::Base
-  
   get '/webtest/*' do
     send_file File.join(File.expand_path(File.dirname(__FILE__)), '..', request.path_info)
+  end
+end
+
+class Health < Sinatra::Base
+  get '/health' do
+    "ok"
   end
 
 end
 
-run Rack::Cascade.new [Resque::Server, Webtest, Token, Carnation]
+run Rack::Cascade.new [Health, Resque::Server, Webtest, Token, Carnation]
 
