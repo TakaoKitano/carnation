@@ -19,6 +19,11 @@ def fix_derivatives
             Item.create_derivatives(item.id)
           end
         end
+      elsif item.status == 0
+        p "#{item.id} not activated"
+        Item.create_derivatives(item.id)
+      elsif item.status == 2
+        p "#{item.id} is deleted"
       end
     end
 end
