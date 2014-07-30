@@ -1,6 +1,6 @@
 @dir = File.expand_path(File.dirname(__FILE__))
 
-worker_processes 1
+worker_processes 2
 working_directory @dir
 
 timeout 30
