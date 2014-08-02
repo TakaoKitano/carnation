@@ -49,6 +49,13 @@ describe User do
     viewer2.destroy
   end
 
+  it "can create a device with the given user" do
+    device = Device.create(:deviceid=>"some-installationid", :user_id=>@user.id)
+    expect(@user.devices[0].user_id).to  eq(@user.id)
+    expect(@user.devices[0].deviceid).to  eq("some-installationid")
+    expect(device.user_id).to eq(@user.id)
+  end
+
   after do
     @user.destroy if @user
   end

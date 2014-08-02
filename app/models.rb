@@ -21,6 +21,7 @@ class User < Sequel::Model(:users)
   many_to_many :groups, :left_key=>:user_id, :right_key=>:group_id, :join_table=>:group_users
   one_to_many :items
   one_to_many :viewers
+  one_to_many :devices
   one_to_one :profile
   def initialize(values={})
     super
@@ -66,6 +67,14 @@ class User < Sequel::Model(:users)
     if accesstoken
       accestoken.require_modification = false
       accestoken.destroy
+    end
+
+    #
+    # destroy all devices
+    #
+    self.devices.each do |device|
+      device.require_modification = false
+      device.destroy
     end
 
     super
@@ -157,7 +166,47 @@ class User < Sequel::Model(:users)
     return true if self.role == User::ROLE[:signup]
     return false
   end
+end
 
+# migrate/003_create_table_devices.rb
+#
+#    create_table(:devices, :ignore_index_errors=>true, :engine => 'InnoDB', :charset=>'utf8') do
+#      foreign_key :user_id, :users, :null=>false, :key=>[:id]
+#      String      :deviceid
+#      Integer     :devicetype
+#      Integer     :created_at
+#      Integer     :updated_at
+#      unique      [:user_id, :deviceid]
+#      index       :user_id
+#    end
+class Device < Sequel::Model(:devices)
+  TYPE = { :ios => 1, :android => 2, :windows => 3 }
+  many_to_one :user
+  def initialize(values={})
+    super
+    self.created_at = Time.now.to_i
+    self.updated_at = self.created_at
+  end
+
+  def before_update
+    self.updated_at = Time.now.to_i
+  end
+
+  def push(message)
+    require 'net/https'
+    require 'uri'
+    uri = URI.parse('https://api.parse.com/1/push')
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request["X-Parse-Application-Id"] = CarnationConfig.parse_application_id
+    request["X-Parse-REST-API-Key"] = CarnationConfig.parse_rest_api_key
+    request["Content-Type"] = "application/json"
+    data = {"where"=>{"installationId"=>self.deviceid}, "data" =>{"alert"=>message}}
+    request.body = data.to_json
+    response = http.request(request)
+    p response, response.body
+  end
 end
 
 class Group < Sequel::Model(:groups)
@@ -232,6 +281,21 @@ class Viewer < Sequel::Model(:viewers)
   def do_like(item)
     r = ViewerLikeItem.find_or_create(:viewer_id=>self.id, :item_id=>item.id)
     return nil if not r
+
+    p r.to_hash
+
+    #
+    # push notification
+    #
+    if not r.updated_at or r.updated_at < Time.new.to_i - 60 
+      p "sending push notification for item_id:#{item.id}"
+      user = User.find(:id=>item.user_id)
+      user.devices.each do |d|
+        d.push("viewer_id:#{self.id} likes item:#{item.id}") # TODO: use template
+      end 
+    else
+      p "push notification is suppressed for item_id:#{item.id}"
+    end
 
     r.count = 0 if not r.count
     r.count = r.count + 1
