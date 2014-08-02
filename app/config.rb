@@ -76,6 +76,20 @@ module CarnationConfig
     return @dlm
   end
 
+  def parse_application_id
+    @parse_application_id ||= "lnVlRH1NEDwYoHPX3iEnfXqY5CmgmkAM3p6HpOyj"
+  end
+  def parse_application_id=(val)
+    @parse_application_id = val
+  end
+
+  def parse_rest_api_key
+    @parse_rest_api_key ||= "UCSpbRxtpHPCmHkbfPblDMsB32glHTMkyHS32P7A"
+  end
+  def parse_rest_api_key=(val)
+    @parse_rest_api_key = val
+  end
+
   def init
     sequel_init
     resque_init
@@ -86,7 +100,11 @@ end
 CarnationConfig.mysql_host=ENV['CARNATION_MYSQL_HOST']
 CarnationConfig.redis_host=ENV['CARNATION_REDIS_HOST']
 CarnationConfig.s3_bucketname=ENV['CARNATION_S3_BUCKET_NAME']
+CarnationConfig.parse_application_id=ENV['CARNATION_PARSE_APPLICATION_ID']
+CarnationConfig.parse_rest_api_key=ENV['CARNATION_PARSE_REST_API_KEY']
 CarnationConfig.init
 CarnationConfig.logger.info "mysql_host=#{CarnationConfig.mysql_host}"
 CarnationConfig.logger.info "redis_host=#{CarnationConfig.redis_host}"
 CarnationConfig.logger.info "s3_bucketname=#{CarnationConfig.s3_bucketname}"
+CarnationConfig.logger.info "parse_application_id=#{CarnationConfig.parse_application_id}"
+CarnationConfig.logger.info "parse_rest_api_key=#{CarnationConfig.parse_rest_api_key}"

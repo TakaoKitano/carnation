@@ -19,6 +19,17 @@ class Carnation < Sinatra::Base
       headers['Access-Control-Allow-Origin'] = '*'
       headers['Access-Control-Allow-Headers'] = 'Authorization,X-Requested-With'
     end
+
+    def check_user_id_parameter
+      target = User.find(:id=>params[:user_id]) 
+      halt(404, "user not found") unless target
+      user = User.find(:id=>@token.user_id) if @token.user_id
+      halt(404, "user not found") unless user
+      if user.id != target.id
+        halt(400, "permission denied") unless user.role == User::ROLE[:admin]
+      end
+      return target.id
+    end
   end
 
   use Rack::OAuth2::Server::Resource::Bearer do |request|
@@ -447,6 +458,86 @@ class Carnation < Sinatra::Base
     @result[:belong_to_groups] = target.groups.map {|g| g.to_hash}
     @result[:profiles] = target.profiles.map{|p| p.to_hash}
 
+    JSON.generate(@result)
+  end
+
+  #
+  # device registration
+  #
+  post '/api/v1/user/device' do
+    user_id = check_user_id_parameter
+
+    deviceid = params[:deviceid]
+    halt(400, "deviceid required") unless deviceid
+    devicetype = params[:devicetype].to_i
+    halt(400, "devietype required") unless devicetype
+
+    begin
+      device = Device.create(:deviceid=>deviceid, :user_id=>user_id, :devicetype=>devicetype)
+    rescue
+      halt(400, "deviceid might already exist")
+    end
+    @result = device.to_hash
+    JSON.generate(@result)
+  end
+
+  #
+  # get devices
+  #
+  get '/api/v1/user/device' do
+    user_id = check_user_id_parameter
+    
+    ds = Device.where(:user_id=>user_id)
+    deviceid = params[:deviceid]
+    if deviceid && deviceid.length > 0
+      ds = ds.where('deviceid = ?', deviceid)
+    end
+    devices = ds.all
+
+    @result[:user_id] = user_id
+    @result[:count] = devices.length
+    @result[:devices] = devices.map {|d| d.to_hash}
+    JSON.generate(@result)
+  end
+
+  #
+  # delete device
+  #
+  delete '/api/v1/user/device' do
+    user_id = check_user_id_parameter
+
+    deviceid = params[:deviceid]
+    halt(400, "deviceid required") unless (deviceid && deviceid.length > 0)
+    
+    device = Device.where(:user_id=>user_id).where('deviceid = ?', deviceid).all[0]
+    halt(400, "no such device") unless device
+    device.destroy
+
+    @result[:user_id] = user_id
+    @result[:deleted] = device.to_hash
+    JSON.generate(@result)
+  end
+
+  #
+  # send a message to device (for testing)
+  #
+  get '/api/v1/user/device/send' do
+    user_id = check_user_id_parameter
+
+    deviceid = params[:deviceid]
+    halt(400, "deviceid required") unless (deviceid && deviceid.length > 0)
+
+    device = Device.where(:user_id=>user_id).where('deviceid = ?', deviceid).all[0]
+    halt(400, "no such device") unless device
+
+    message = params[:message]
+    halt(400, "message required") unless (message && message.length > 0)
+
+    device.push(message)
+
+    @result[:user_id] = user_id
+    @result[:deviceid] = device.deviceid
+    @result[:message] = message
     JSON.generate(@result)
   end
 

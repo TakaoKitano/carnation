@@ -234,7 +234,7 @@ $(document).ready(function() {
         <div>
           <label>user_id(mandatory)</label><input type="text" name="user_id"/>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -250,7 +250,7 @@ $(document).ready(function() {
         <div>
           <label>email(mandatory)</label><input type="text" name="email" value="test01@chikaku.com"/>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -297,7 +297,7 @@ $(document).ready(function() {
             <option value=".mov">.mov</option>
           </select>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
       </fieldset>
@@ -346,7 +346,7 @@ $(document).ready(function() {
           <label>valid_after</label><input type="text" name="valid_after"/>
           optional - specifies seconds to make item valid (to viewer), e.g. 600 (valid after 10 minitues). default:0 (valid immediately)
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
       </fieldset>
@@ -362,7 +362,7 @@ $(document).ready(function() {
         <div >
           <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -379,7 +379,7 @@ $(document).ready(function() {
         <div >
           <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -397,7 +397,7 @@ $(document).ready(function() {
         <div >
           <label>item_id(mandatory)</label> <input type="text" name="item_id"/>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
@@ -496,10 +496,113 @@ $(document).ready(function() {
           </select>
           <label>optional -  default:false, if this parameter is true, only ids are returned </label>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="4" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="4" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
         <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<h3>device</h3>
+
+<div data-collapse class="api">
+    <h4>POST /api/v1/user/device  - register device to receive push notifications</h4>
+    <form class="carnation_api" action="/api/v1/user/device" method="POST">
+      <p>
+        register a device in order to receive push notification<br/>
+        if the device no longer requires push notification, delete the registration<br/>
+        (channel based push will be performed regardless of the device registration)
+      </p>
+      <fieldset>
+        <div >
+          <label>user_id(mandatory)</label> <input type="text" name="user_id"/>
+        </div>
+        <div >
+          <label>deviceid</label><input type="text" name="deviceid"/>
+          mandatory - specifies parse.com installationId 
+        </div>
+        <div >
+          <label>devicetype</label>
+          <select name="devicetype">
+            <option value="1">iOS:1</option>
+            <option value="2">Android:2</option>
+          </select>
+          <label>mandatory -  1:iOS, 2:Android, 3:Windows 
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>GET /api/v1/user/device  - get the list of registered devices</h4>
+    <form class="carnation_api" action="/api/v1/user/device" method="GET">
+      <p>
+        retrieve the list of registered devices
+      </p>
+      <fieldset>
+        <div >
+          <label>user_id</label> <input type="text" name="user_id"/>
+          mandatory
+        </div>
+        <div >
+          <label>deviceid</label> <input type="text" name="deviceid"/>
+          optional - if specified, only the device of specified deviceid will be returned
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>DELETE /api/v1/user/device  - delete device registration</h4>
+    <form class="carnation_api" action="/api/v1/user/device" method="DELETE">
+      <p>
+        delete device registration
+      </p>
+      <fieldset>
+        <div >
+          <label>user_id</label> <input type="text" name="user_id"/>
+          mandatory
+        </div>
+        <div >
+          <label>deviceid</label><input type="text" name="deviceid"/>
+          mandatory - deviceid returned by GET /api/v1/user/device
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>GET /api/v1/user/device/send  - send a message to a registered device</h4>
+    <form class="carnation_api" action="/api/v1/user/device/send" method="GET">
+      <p>
+        send a push notification to the specified device (for testing purpuse only)
+      </p>
+      <fieldset>
+        <div >
+          <label>user_id</label> <input type="text" name="user_id"/>
+          mandatory
+        </div>
+        <div >
+          <label>deviceid</label><input type="text" name="deviceid"/>
+          mandatory - deviceid returned by GET /api/v1/user/device
+        </div>
+        <div >
+          <label>message</label><input type="text" size="80" name="message"/>
+          mandatory - message that will be displayed on the target device 
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
       </fieldset>
     </form>
 </div>
@@ -510,7 +613,7 @@ $(document).ready(function() {
     <h4>GET /api/v1/viewer/users - retrieve users that can be accessed by viewer</h4>
     <form class="carnation_api" action="/api/v1/viewer/users" method="GET">
       <fieldset>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user">as user</input>
         <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
@@ -525,7 +628,7 @@ $(document).ready(function() {
         <div >
           <label>item_id</label><input type="text" name="item_id"/>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user">as user</input>
         <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
@@ -540,7 +643,7 @@ $(document).ready(function() {
         <div >
           <label>viewer_id</label><input type="text" name="viewer_id"/>
         </div>
-        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters are shown here</textarea><br/>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user">as user</input>
         <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
