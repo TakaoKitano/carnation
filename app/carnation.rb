@@ -178,7 +178,7 @@ class Carnation < Sinatra::Base
       item.save
     end
 
-    form = $bucket.presigned_post(:key => item.path+item.extension)
+    form = CarnationConfig.s3bucket.presigned_post(:key => item.path+item.extension)
     require 'erb'
     html = <<-POSTHTML
       <html>
