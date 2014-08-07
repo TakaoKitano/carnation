@@ -75,16 +75,8 @@ sudo gem install bundler
 <pre>
 $ cd magoch_server 
 $ bundle install --path vendor/bundle
-$ mysql -u root <db/initialize_database.sql (or create db in AWS admin console RDS)
-</pre>
-
-select one of environment:
-
--production.env
--test.env
--local.env
-
-<pre>
+$ cat db/initialize_database.sql | mysql -u root (or create account on AWS admin console)
+$ source production.env (or test.env)
 $ rake db:migrate
 $ rake db:builtin_accounts
 $ rake db:testdata
