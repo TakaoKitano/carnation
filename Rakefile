@@ -50,19 +50,19 @@ task :rackup do
 end
 
 desc "Run all specs in spec directory"
-task :spec do
+task :tests do
   sh 'bundle exec rspec -c spec/*'
 end
 
 namespace :resque do
   desc 'start resque worker process'
   task :start do
-    sh 'bundle exec ruby resque/launch_resque_worker.rb >>resque/worker.log 2>&1 &'
+    sh 'bundle exec ruby launch_resque_worker.rb &'
   end
 
   desc 'stop resque worker process'
   task :stop do
-    sh "kill -15 `cat resque/worker.pid`"
+    sh "kill -15 `cat resque.pid`"
   end
 end
 
@@ -74,30 +74,28 @@ namespace :server do
 
   desc 'stop unicorn server'
   task :stop do
-    sh "cat server/unicorn.pid | xargs kill -QUIT"
+    sh "cat unicorn.pid | xargs kill -QUIT"
   end
 end
 
 Rake::PackageTask.new("magoch_server", :noversion) do |t|
-  t.package_dir = "docker/app"
-  t.package_files.exclude("vendor/**/*", "docker/**/*")
+  t.package_dir = "docker/build"
   t.package_files.include("**/*")
+  t.package_files.exclude("vendor/**/*", "docker/**/*")
   t.need_tar = true
 end
 
 namespace :docker do
-  desc 'build images'
+  desc 'build docker image'
   task :build do
-    sh 'cd docker/base && sudo docker build --rm=true -t tkitano/carnation.base .'
     Rake::Task["package"].invoke
-    sh 'cd docker/app && sudo docker build --rm=true -t tkitano/carnation.app .'
+    sh 'cd docker && sudo docker build --rm=true -t chikaku/carnation .'
   end
 
-  desc 'push images'
+  desc 'push docker images'
   task :push do
-    sh 'sudo docker login'
-    sh 'sudo docker push tkitano/carnation.base'
-    sh 'sudo docker push tkitano/carnation.app'
+    sh 'sudo docker login --username=chikaku --email=tkitano@chikaku.com --password=Qds0h43CRTdFYwbpce6M'
+    sh 'sudo docker push chikaku/carnation'
   end
 end
 

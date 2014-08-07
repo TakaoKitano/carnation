@@ -7,6 +7,6 @@ timeout 30
 
 listen 9292
 
-pid "#{@dir}/server/unicorn.pid"
-stdout_path "#{@dir}/server/unicorn.log"
-stderr_path "#{@dir}/server/unicorn.log"
+pid "#{@dir}/unicorn.pid"
+stdout_path "#{@dir}/log/unicorn.log"
+stderr_path "#{@dir}/log/unicorn.log"
