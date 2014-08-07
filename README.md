@@ -107,7 +107,7 @@ rake docker:push
 ### copy scripts to a server (AWS EC2 CoreOS instance will be used)
 
 <pre>
-scp -i doc/magoaws.pem run_docker.sh  core@ec2_instance_address:
+scp -i doc/magoaws.pem run_carnation.sh  core@ec2_instance_address:
 scp -i doc/magoaws.pem production.env core@ec2_instance_address:
 scp -i doc/magoaws.pem test.env core@ec2_instance_address:
 </pre>
@@ -117,7 +117,6 @@ scp -i doc/magoaws.pem test.env core@ec2_instance_address:
 <pre>
 sudo docker login 
 sudo docker pull chikaku/carnation
-sudo docker kill $(sudo docker ps -q)
 source ./production.env (or test.env)
-./run_docker.sh
+./run_carnation.sh
 </pre>
