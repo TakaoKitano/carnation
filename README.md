@@ -80,7 +80,7 @@ $ source production.env (or test.env)
 $ rake db:migrate
 $ rake db:builtin_accounts
 $ rake db:testdata
-$ rake spec
+$ rake tests
 </pre>
 
 ### run server
