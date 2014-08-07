@@ -21,6 +21,7 @@ class User < Sequel::Model(:users)
   many_to_many :groups, :left_key=>:user_id, :right_key=>:group_id, :join_table=>:group_users
   one_to_many :items
   one_to_many :viewers
+  one_to_many :devices
   one_to_one :profile
   def initialize(values={})
     super
@@ -66,6 +67,14 @@ class User < Sequel::Model(:users)
     if accesstoken
       accestoken.require_modification = false
       accestoken.destroy
+    end
+
+    #
+    # destroy all devices
+    #
+    self.devices.each do |device|
+      device.require_modification = false
+      device.destroy
     end
 
     super
@@ -157,7 +166,47 @@ class User < Sequel::Model(:users)
     return true if self.role == User::ROLE[:signup]
     return false
   end
+end
 
+# migrate/003_create_table_devices.rb
+#
+#    create_table(:devices, :ignore_index_errors=>true, :engine => 'InnoDB', :charset=>'utf8') do
+#      foreign_key :user_id, :users, :null=>false, :key=>[:id]
+#      String      :deviceid
+#      Integer     :devicetype
+#      Integer     :created_at
+#      Integer     :updated_at
+#      unique      [:user_id, :deviceid]
+#      index       :user_id
+#    end
+class Device < Sequel::Model(:devices)
+  TYPE = { :ios => 1, :android => 2, :windows => 3 }
+  many_to_one :user
+  def initialize(values={})
+    super
+    self.created_at = Time.now.to_i
+    self.updated_at = self.created_at
+  end
+
+  def before_update
+    self.updated_at = Time.now.to_i
+  end
+
+  def push(message)
+    require 'net/https'
+    require 'uri'
+    uri = URI.parse('https://api.parse.com/1/push')
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request["X-Parse-Application-Id"] = CarnationConfig.parse_application_id
+    request["X-Parse-REST-API-Key"] = CarnationConfig.parse_rest_api_key
+    request["Content-Type"] = "application/json"
+    data = {"where"=>{"installationId"=>self.deviceid}, "data" =>{"alert"=>message}}
+    request.body = data.to_json
+    response = http.request(request)
+    p response, response.body
+  end
 end
 
 class Group < Sequel::Model(:groups)
@@ -232,6 +281,21 @@ class Viewer < Sequel::Model(:viewers)
   def do_like(item)
     r = ViewerLikeItem.find_or_create(:viewer_id=>self.id, :item_id=>item.id)
     return nil if not r
+
+    p r.to_hash
+
+    #
+    # push notification
+    #
+    if not r.updated_at or r.updated_at < Time.new.to_i - 60 
+      p "sending push notification for item_id:#{item.id}"
+      user = User.find(:id=>item.user_id)
+      user.devices.each do |d|
+        d.push("viewer_id:#{self.id} likes item:#{item.id}") # TODO: use template
+      end 
+    else
+      p "push notification is suppressed for item_id:#{item.id}"
+    end
 
     r.count = 0 if not r.count
     r.count = r.count + 1
@@ -356,34 +420,34 @@ class Item < Sequel::Model(:items)
 
   def presigned_url(method_symbol)
     begin
-      s3obj = $bucket.objects[self.path + self.extension]
+      s3obj = CarnationConfig.s3bucket.objects[self.path + self.extension]
       ps = AWS::S3::PresignV4.new(s3obj)
       uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
     rescue
-      $logger.info "#{self.id}:error when generating presigned_url"
+      CarnationConfig.logger.info "#{self.id}:error when generating presigned_url"
       uri = ""
     end
     uri.to_s
   end
 
   def self.create_derivatives(item_id)
-    $logger.info "#{item_id}:Item.create_derivatives"
+    CarnationConfig.logger.info "#{item_id}:Item.create_derivatives"
 
     item = Item.find(:id=>item_id)
     return false unless item
 
     if item.status == Item::STATUS[:deleted]
-      $logger.info "#{item_id}:could not create derivatives for a deleted item"
+      CarnationConfig.logger.info "#{item_id}:could not create derivatives for a deleted item"
       return false
     end
 
     #
     # get lock
     #
-    $logger.info "#{item_id}:getting DLM lock"
-    lock = $DLM.lock("create_derivatives:#{item_id}", 5 * 60 * 1000) # 5 minutes
+    CarnationConfig.logger.info "#{item_id}:getting DLM lock"
+    lock = CarnationConfig.dlm.lock("create_derivatives:#{item_id}", 5 * 60 * 1000) # 5 minutes
     if not lock 
-      $logger.info "#{item_id}: could not get DLM lock"
+      CarnationConfig.logger.info "#{item_id}: could not get DLM lock"
       return false
     end
 
@@ -393,8 +457,8 @@ class Item < Sequel::Model(:items)
       # download the file from S3 to a tempfile
       # 
       tmpfile = Tempfile.new(['item', item.extension])
-      $logger.info "#{item_id}:downloading item from S3"
-      s3obj = $bucket.objects[item.path + item.extension]
+      CarnationConfig.logger.info "#{item_id}:downloading item from S3"
+      s3obj = CarnationConfig.s3bucket.objects[item.path + item.extension]
       s3obj.read { |chunk|
         tmpfile.write(chunk)
         tmpfile.flush
@@ -403,7 +467,7 @@ class Item < Sequel::Model(:items)
       #
       # create image or video derivatives
       # 
-      $logger.info "#{item.id}:getting mime_type"
+      CarnationConfig.logger.info "#{item.id}:getting mime_type"
       mime_type = FileMagic.new(:mime_type).file(tmpfile.path)
       if mime_type.start_with?("image")
         result = item.create_image_derivatives(tmpfile.path, mime_type)
@@ -411,19 +475,19 @@ class Item < Sequel::Model(:items)
         result = item.create_video_derivatives(tmpfile.path, mime_type)
       end
     rescue
-      $logger.info "#{item.id}:error while creating derivatives"
+      CarnationConfig.logger.info "#{item.id}:error while creating derivatives"
       result = false
     ensure
       tmpfile.close if tmpfile
       tmpfile.unlink if tmpfile
-      $DLM.unlock(lock)
+      CarnationConfig.dlm.unlock(lock)
     end
-    $logger.info "#{item_id}:create_derivatives returns #{result}"
+    CarnationConfig.logger.info "#{item_id}:create_derivatives returns #{result}"
     return result
   end
 
   def create_image_derivatives(filepath, mime_type)
-    $logger.info "#{self.id}:creating image derivatives"
+    CarnationConfig.logger.info "#{self.id}:creating image derivatives"
     original = Magick::Image.read(filepath).first.auto_orient
     return false unless original
 
@@ -431,7 +495,7 @@ class Item < Sequel::Model(:items)
       timestr = original.get_exif_by_entry('DateTime')[0][1]
       self.created_at = Time.parse(timestr.sub(':', '/').sub(':', '/')).to_i
     rescue
-      $logger.debug "#{self.id}:(not fatal)could not get exif DateTime"
+      CarnationConfig.logger.debug "#{self.id}:(not fatal)could not get exif DateTime"
     end
 
     result = Derivative.generate_derivatives(self.id, original)
@@ -444,22 +508,22 @@ class Item < Sequel::Model(:items)
     self.status = Item::STATUS[:active] if result
     self.save
 
-    $logger.info "#{self.id}:create_image_derivatives returns #{result}"
+    CarnationConfig.logger.info "#{self.id}:create_image_derivatives returns #{result}"
     return result
   end
 
   def create_video_derivatives(filepath, mime_type)
-    $logger.info "#{self.id}:creating video derivatives"
+    CarnationConfig.logger.info "#{self.id}:creating video derivatives"
     movie = FFMPEG::Movie.new(filepath)
     return unless movie
 
     result = false
-    $logger.info "#{self.id}: width=#{movie.width} height=#{movie.height} duration=#{movie.duration}"
+    CarnationConfig.logger.info "#{self.id}: width=#{movie.width} height=#{movie.height} duration=#{movie.duration}"
     rotation = 0
     exif = Exiftool.new(filepath)
     if exif
       rotation = exif.to_hash[:rotation]
-      $logger.info "#{self.id}:rotation=#{rotation}" if rotation
+      CarnationConfig.logger.info "#{self.id}:rotation=#{rotation}" if rotation
     end 
 
     begin
@@ -480,7 +544,7 @@ class Item < Sequel::Model(:items)
       end
 
     rescue
-      $logger.info "#{self.id}:error while creating screenshot"
+      CarnationConfig.logger.info "#{self.id}:error while creating screenshot"
       result = false
     ensure
       tmpfile.close
@@ -503,11 +567,11 @@ class Derivative < Sequel::Model(:derivatives)
 
   def presigned_url(method_symbol)
     begin
-      s3obj = $bucket.objects[self.path + self.extension]
+      s3obj = CarnationConfig.s3bucket.objects[self.path + self.extension]
       ps = AWS::S3::PresignV4.new(s3obj)
       uri = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
     rescue
-      $logger.info "#{self.item_id}:error when generating presigned_url for derivative"
+      CarnationConfig.logger.info "#{self.item_id}:error when generating presigned_url for derivative"
       uri = ""
     end
     uri.to_s
@@ -522,57 +586,57 @@ class Derivative < Sequel::Model(:derivatives)
   def self.generate_derivatives(item_id, original)
     result = true
     begin
-      $logger.info "#{item_id}:generating medium"
+      CarnationConfig.logger.info "#{item_id}:generating medium"
       image = original.resize_to_fit(1920, 1080)
       derivative = Derivative.find_or_create(:item_id=>item_id, :index=>1)
       result = derivative.store_and_upload_file(image, "medium")
     rescue
-      $logger.info "#{item_id}:error while generating medium image"
+      CarnationConfig.logger.info "#{item_id}:error while generating medium image"
       result = false
     ensure
       if image
         image.destroy!
       end
       if not result
-        $logger.info "#{item_id}:deleting derivative"
+        CarnationConfig.logger.info "#{item_id}:deleting derivative"
         derivative.destroy
       end
     end
 
     begin
-      $logger.info "#{item_id}:generating thumbnail"
+      CarnationConfig.logger.info "#{item_id}:generating thumbnail"
       image = original.resize_to_fill(100,100)
       derivative = Derivative.find_or_create(:item_id=>item_id, :index=>2)
       result = derivative.store_and_upload_file(image, "thumbnail")
     rescue
-      $logger.info "#{item_id}:error while generating thumbnail image"
+      CarnationConfig.logger.info "#{item_id}:error while generating thumbnail image"
       result = false
     ensure
       if image
         image.destroy!
       end
       if not result
-        $logger.info "#{item_id}:deleting derivative"
+        CarnationConfig.logger.info "#{item_id}:deleting derivative"
         derivative.destroy
       end
     end
     
-    $logger.info "#{item_id}:generate_derivatives returns #{result}"
+    CarnationConfig.logger.info "#{item_id}:generate_derivatives returns #{result}"
     return result
   end
 
   def store_and_upload_file(image, name)
-    $logger.info "#{self.item_id}:store_and_upload_file #{name}"
+    CarnationConfig.logger.info "#{self.item_id}:store_and_upload_file #{name}"
     result = true
     begin
-      $logger.info "#{self.item_id}:creating tempfile"
+      CarnationConfig.logger.info "#{self.item_id}:creating tempfile"
       tmpfile = Tempfile.new(['derivatives', '.jpg'])
       filepath = tmpfile.path
       image.format = 'JPEG'
       image.write(filepath) 
 
       begin
-        $logger.info "#{self.item_id}:updating DB"
+        CarnationConfig.logger.info "#{self.item_id}:updating DB"
         self.path = self.item.path + "_" + sprintf("%02d", self.index)
         self.name = name
         self.extension = ".jpg"
@@ -584,25 +648,25 @@ class Derivative < Sequel::Model(:derivatives)
         self.mime_type = "image/jpeg"
         self.save
       rescue
-        $logger.info "#{self.item_id}:error while saving to DB"
+        CarnationConfig.logger.info "#{self.item_id}:error while saving to DB"
         result = false
       end
 
       if result
         begin
-          $logger.info "#{self.item_id}:uploading to S3"
-          $bucket.objects[self.path + self.extension].write(:file => filepath)
+          CarnationConfig.logger.info "#{self.item_id}:uploading to S3"
+          CarnationConfig.s3bucket.objects[self.path + self.extension].write(:file => filepath)
         rescue
-          $logger.info "#{self.item_id}:error while uploading to S3"
+          CarnationConfig.logger.info "#{self.item_id}:error while uploading to S3"
           result = false
         end
       end
 
     rescue
-      $logger.info "#{self.item_id}:error in store_and_upload_file"
+      CarnationConfig.logger.info "#{self.item_id}:error in store_and_upload_file"
       result = false
     ensure
-      $logger.info "#{self.item_id}:removing tmpfile"
+      CarnationConfig.logger.info "#{self.item_id}:removing tmpfile"
       tmpfile.close
       tmpfile.unlink
     end

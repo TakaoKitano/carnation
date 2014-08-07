@@ -1,45 +1,110 @@
 require 'sequel'
 require 'mysql2'
 
-$logger = Logger.new(STDOUT)
-$logger.level = Logger::INFO
+module CarnationConfig
+  module_function
+  def logger
+    if not @logger
+      @logger = Logger.new(STDOUT) unless @logger
+      @logger.level = Logger::INFO
+    end
+    return @logger
+  end
 
-mysql_host = ENV['CARNATION_MYSQL_HOST']
-if not mysql_host
-  mysql_host = "localhost"
+  def mysql_host
+    @host ||= 'localhost'
+  end
+  def mysql_host=(val)
+    @host = val
+  end
+  def mysql_password
+    @password ||= 'aFx4mMHb3z7d6dy'
+  end
+  def mysql_password=(val)
+    @password = val
+  end
+  def sequel_init
+    @db = Sequel.connect("mysql2://carnation:#{mysql_password}@#{mysql_host}/carnationdb")
+    Sequel.default_timezone = :utc
+  end
+
+  def redis_host
+    @redis_host ||= 'localhost'
+  end
+  def redis_host=(val)
+    @redis_host = val
+  end
+  def redis_port
+    @redis_port ||= 6379
+    return @redis_port
+  end
+
+  def s3_bucketname
+    @s3_bucketname ||= 'carnationtest'
+  end
+  def s3_bucketname=(val)
+    @s3_bucketname = val
+  end
+  def s3bucket
+    if not @s3bucket
+      s3_init
+    end
+    @s3bucket
+  end
+  def s3_init
+    require 'aws-sdk'
+    AWS.config(
+      :access_key_id => 'AKIAI2ZSXBHOXAWRFCQA',
+      :secret_access_key => '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',
+      :region => 'ap-northeast-1')
+    @s3 = AWS::S3.new
+    @s3bucket ||= @s3.buckets[s3_bucketname]
+  end
+
+  def resque_init
+    require 'resque'
+    require 'resque-retry'
+    require 'resque-timeout'
+    Resque.redis = "redis://#{redis_host}:#{redis_port}"
+    Resque.logger = CarnationConfig.logger
+    Resque::Plugins::Timeout.timeout = 900
+  end
+
+  def dlm
+    require 'redlock'
+    @dlm ||= Redlock.new("redis://#{redis_host}:#{redis_port}")
+    return @dlm
+  end
+
+  def parse_application_id
+    @parse_application_id ||= "lnVlRH1NEDwYoHPX3iEnfXqY5CmgmkAM3p6HpOyj"
+  end
+  def parse_application_id=(val)
+    @parse_application_id = val
+  end
+
+  def parse_rest_api_key
+    @parse_rest_api_key ||= "UCSpbRxtpHPCmHkbfPblDMsB32glHTMkyHS32P7A"
+  end
+  def parse_rest_api_key=(val)
+    @parse_rest_api_key = val
+  end
+
+  def init
+    sequel_init
+    resque_init
+    s3_init
+  end
 end
-p "CARNATION_MYSQL_HOST=#{mysql_host}"
 
-redis_host = ENV['CARNATION_REDIS_HOST']
-if not redis_host
-  redis_host = "localhost"
-end
-p "CARNATION_REDIS_HOST=#{redis_host}"
-
-s3_bucket_name = ENV['CARNATION_S3_BUCKET_NAME']
-if not s3_bucket_name
-  s3_bucket_name = 'carnationtest'
-end
-p "CARNATION_S3_BUCKET_NAME=#{s3_bucket_name}"
-
-$DB = Sequel.connect("mysql2://carnation:aFx4mMHb3z7d6dy@#{mysql_host}/carnationdb")
-Sequel.default_timezone = :utc
-
-require 'resque'
-require 'resque-retry'
-require 'resque-timeout'
-Resque.redis = "redis://#{redis_host}:6379"
-Resque.logger = $logger
-Resque::Plugins::Timeout.timeout = 900
-require 'redlock'
-$DLM = Redlock.new("redis://#{redis_host}:6379")
-
-require 'aws-sdk'
-AWS.config(
-  :access_key_id => 'AKIAI2ZSXBHOXAWRFCQA',
-  :secret_access_key => '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',
-  :region => 'ap-northeast-1')
-$s3 = AWS::S3.new
-$bucket = $s3.buckets[s3_bucket_name]
-
-
+CarnationConfig.mysql_host=ENV['CARNATION_MYSQL_HOST']
+CarnationConfig.redis_host=ENV['CARNATION_REDIS_HOST']
+CarnationConfig.s3_bucketname=ENV['CARNATION_S3_BUCKET_NAME']
+CarnationConfig.parse_application_id=ENV['CARNATION_PARSE_APPLICATION_ID']
+CarnationConfig.parse_rest_api_key=ENV['CARNATION_PARSE_REST_API_KEY']
+CarnationConfig.init
+CarnationConfig.logger.info "mysql_host=#{CarnationConfig.mysql_host}"
+CarnationConfig.logger.info "redis_host=#{CarnationConfig.redis_host}"
+CarnationConfig.logger.info "s3_bucketname=#{CarnationConfig.s3_bucketname}"
+CarnationConfig.logger.info "parse_application_id=#{CarnationConfig.parse_application_id}"
+CarnationConfig.logger.info "parse_rest_api_key=#{CarnationConfig.parse_rest_api_key}"
