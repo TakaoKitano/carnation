@@ -95,7 +95,7 @@ namespace :docker do
   desc 'push docker images'
   task :push do
     sh 'sudo docker login --username=chikaku --email=tkitano@chikaku.com --password=Qds0h43CRTdFYwbpce6M'
-    sh 'sudo docker push tkitano/carnation.app'
+    sh 'sudo docker push chikaku/carnation'
   end
 end
 

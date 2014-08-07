@@ -145,3 +145,30 @@ $ rake resque:start
 $ rake server:stop
 $ rake server:start
 </pre>
+
+# docker instructions
+
+### prepare and push image
+
+<pre>
+rake docker:build
+rake docker:push
+</pre>
+
+### copy scripts to a server (AWS EC2 CoreOS instance will be used)
+
+<pre>
+scp -i doc/magoaws.pem run_docker.sh  core@ec2_instance_address:
+scp -i doc/magoaws.pem production.env core@ec2_instance_address:
+scp -i doc/magoaws.pem test.env core@ec2_instance_address:
+</pre>
+
+### run programs on the target server
+
+<pre>
+sudo docker login 
+sudo docker pull chikaku/carnation
+sudo docker kill $(sudo docker ps -q)
+source ./production.env (or test.env)
+./run_docker.sh
+</pre>
