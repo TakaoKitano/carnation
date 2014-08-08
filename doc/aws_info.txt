@@ -17,7 +17,7 @@ region: ap-northeast-1
 #
 # EC2 instance
 #
-ssh -i magoaws.pem carnation@54.178.141.213
+ssh -i magoaws.pem core@aws_ec2_instance_address (user name could be ubuntu or ec2-user)
 
 -----BEGIN RSA PRIVATE KEY-----
 MIIEogIBAAKCAQEArugvg9n/X4dRSEAjotmBmwiomcES56uon2eJWeY2D74063KzsCQ6UcsJeN/w

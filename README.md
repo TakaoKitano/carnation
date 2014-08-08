@@ -10,6 +10,9 @@ http://dev.mago-ch.com/webtest/index.html kenken/magomago
 
 ubuntu 14.04 LTS server
 
+-adduser carnation
+-add magoaws.pem as ~/.ssh/id_rsa
+
 ### make sure to take the latest
 
 <pre>
@@ -22,17 +25,10 @@ sudo apt-get -y update
 sudo apt-get -y install wget curl git pkg-config
 </pre>
 
-### nginx
+### redis client
 
 <pre>
-sudo apt-get -y install nginx
-sudo cp conf/nginx.conf /etc/nginx
-</pre>
-
-### redis for resque worker
-
-<pre>
-sudo apt-get -y install redis-server
+sudo apt-get -y install redis-tools
 </pre>
 
 ### for rmagick, avconv
@@ -41,14 +37,13 @@ sudo apt-get -y install redis-server
 sudo apt-get -y install imagemagick libmagickwand-dev libmagic-dev libav-tools libimage-exiftool-perl
 </pre>
 
-### mysql (server will not be used, but for now it's needed for testing)
+### mysql client
 
 <pre>
 sudo apt-get install -y libmysqlclient-dev mysql-client
-sudo apt-get install -y mysql-server
 </pre>
 
-### setup 
+### git repository
 
 <pre>
 $ git clone git@github.com:kajiwara321/magoch_server.git
@@ -69,17 +64,31 @@ sudo make install
 sudo gem install bundler
 </pre>
 
+### nginx 
+
+<pre>
+sudo apt-get install -y nginx
+sudo cp conf/nginx.conf /etc/nginx/nginx.conf
+edit /etc/nginx/nginx.conf and remove the "daemon off" line (as this is for docker container)
+sudo service nginx restart
+</pre>
+
+### setup db (needed only if you setup a new database)
+
+<pre>
+$ cat db/initialize_database.sql | mysql -u root (or create account on AWS admin console)
+$ rake db:migrate
+$ rake db:builtin_accounts
+$ rake db:testdata
+</pre>
 
 ### setup 
 
 <pre>
 $ cd magoch_server 
 $ bundle install --path vendor/bundle
-$ cat db/initialize_database.sql | mysql -u root (or create account on AWS admin console)
-$ source production.env (or test.env)
-$ rake db:migrate
-$ rake db:builtin_accounts
-$ rake db:testdata
+$ cp test.env carnation.env (or use production.env)
+$ source carnation.env
 $ rake tests
 </pre>
 
@@ -87,8 +96,8 @@ $ rake tests
 
 <pre>
 $ cd /home/carnation/magoch_server
-$ git pull origin master
-$ bundle install --path vendor/bundle
+$ mkdir log
+$ source carnation.env
 $ rake resque:stop
 $ rake resque:start
 $ rake server:stop
@@ -96,6 +105,14 @@ $ rake server:start
 </pre>
 
 # docker instructions
+
+## build and push image (on a development machine)
+
+### install docker on ubuntu (you don't need this on CoreOS)
+
+<pre>
+$ curl -sSL https://get.docker.io/ubuntu/ | sudo sh
+</pre>
 
 ### prepare and push image
 
@@ -108,15 +125,13 @@ rake docker:push
 
 <pre>
 scp -i doc/magoaws.pem run_carnation.sh  core@ec2_instance_address:
-scp -i doc/magoaws.pem production.env core@ec2_instance_address:
-scp -i doc/magoaws.pem test.env core@ec2_instance_address:
+scp -i doc/magoaws.pem production.env core@ec2_instance_address:carnation.env
 </pre>
 
-### run programs on the target server
+## run programs on the target server
 
 <pre>
 sudo docker login 
 sudo docker pull chikaku/carnation
-source ./production.env (or test.env)
 ./run_carnation.sh
 </pre>
