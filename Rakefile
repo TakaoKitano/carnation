@@ -62,7 +62,7 @@ namespace :resque do
 
   desc 'stop resque worker process'
   task :stop do
-    sh "kill -15 `cat resque.pid`"
+    sh "kill -15 `cat log/resque.pid`"
   end
 end
 
@@ -74,14 +74,14 @@ namespace :server do
 
   desc 'stop unicorn server'
   task :stop do
-    sh "cat unicorn.pid | xargs kill -QUIT"
+    sh "cat log/unicorn.pid | xargs kill -QUIT"
   end
 end
 
 Rake::PackageTask.new("magoch_server", :noversion) do |t|
-  t.package_dir = "docker/build"
+  t.package_dir = "build"
   t.package_files.include("**/*")
-  t.package_files.exclude("vendor/**/*", "docker/**/*")
+  t.package_files.exclude("README.md", "scripts/**/*", "spec/**/*", "doc/**/*", "log/**/*", "db/**/*", "migrate/**/*",  "vendor/**/*", "build/**/*")
   t.need_tar = true
 end
 
@@ -89,7 +89,7 @@ namespace :docker do
   desc 'build docker image'
   task :build do
     Rake::Task["package"].invoke
-    sh 'cd docker && sudo docker build --rm=true -t chikaku/carnation .'
+    sh 'sudo docker build --rm=true -t chikaku/carnation .'
   end
 
   desc 'push docker images'

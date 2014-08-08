@@ -87,8 +87,10 @@ $ rake db:testdata
 <pre>
 $ cd magoch_server 
 $ bundle install --path vendor/bundle
+$ cd scripts
 $ cp test.env carnation.env (or use production.env)
 $ source carnation.env
+$ cd ..
 $ rake tests
 </pre>
 
@@ -97,7 +99,7 @@ $ rake tests
 <pre>
 $ cd /home/carnation/magoch_server
 $ mkdir log
-$ source carnation.env
+$ source scripts/carnation.env
 $ rake resque:stop
 $ rake resque:start
 $ rake server:stop
@@ -124,8 +126,8 @@ rake docker:push
 ### copy scripts to a server (AWS EC2 CoreOS instance will be used)
 
 <pre>
-scp -i doc/magoaws.pem run_carnation.sh  core@ec2_instance_address:
-scp -i doc/magoaws.pem production.env core@ec2_instance_address:carnation.env
+scp -i doc/magoaws.pem scripts/run_carnation.sh  core@ec2_instance_address:
+scp -i doc/magoaws.pem scripts/production.env core@ec2_instance_address:carnation.env
 </pre>
 
 ## run programs on the target server
