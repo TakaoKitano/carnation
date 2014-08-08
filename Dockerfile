@@ -40,14 +40,18 @@ ADD build/magoch_server/Gemfile      /home/carnation/magoch_server/Gemfile
 ADD build/magoch_server/Gemfile.lock /home/carnation/magoch_server/Gemfile.lock
 WORKDIR /home/carnation/magoch_server
 RUN bundle install --path vendor/bundle
-WORKDIR /home/carnation
-ADD build/magoch_server.tgz /home/carnation
 
 #
 # launch programs via supervisord
 #
 ENV PATH /usr/local/bin:$PATH
-WORKDIR /home/carnation/magoch_server
 VOLUME ["/var/run"]
 VOLUME ["/home/carnation/magoch_server/log"]
 CMD ["/usr/bin/supervisord","-c", "/home/carnation/magoch_server/conf/supervisord.conf"]
+
+#
+# add carnation
+#
+WORKDIR /home/carnation
+ADD build/magoch_server.tgz /home/carnation
+WORKDIR /home/carnation/magoch_server
