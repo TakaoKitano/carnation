@@ -1,12 +1,17 @@
 #!/bin/bash
 #
-# check env
+# check env file
 #
-[ -z "$CARNATION_S3_BUCKET_NAME" ] && echo "need to export CARNATION_S3_BUCKET_NAME" && exit 1
-[ -z "$CARNATION_MYSQL_HOST" ] && echo "need to export CARNATION_MYSQL_HOST" && exit 1
-[ -z "$CARNATION_REDIS_HOST" ] && echo "need to export CARNATION_REDIS_HOST" && exit 1
-[ -z "$CARNATION_PARSE_APPLICATION_ID" ] && echo "need to export CARNATION_PARSE_APPLICATION_ID" && exit 1
-[ -z "$CARNATION_PARSE_REST_API_KEY" ] && echo "need to export CARNATION_PARSE_REST_API_KEY" && exit 1
+if [ ! -f carnation.env ]; then
+    echo "carnation.env is not found"
+    exit 1
+fi
+
+source ./carnation.env
+echo CARNATION_S3_BUCKET_NAME=$CARNATION_S3_BUCKET_NAME
+echo CARNATION_MYSQL_HOST=$CARNATION_MYSQL_HOST
+echo CARNATION_REDIS_HOST=$CARNATION_REDIS_HOST
+
 PWD=`pwd`
 mkdir -p log
 sudo docker kill carnation
