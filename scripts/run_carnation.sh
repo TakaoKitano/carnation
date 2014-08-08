@@ -2,12 +2,15 @@
 #
 # check env file
 #
-if [ ! -f carnation.env ]; then
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ ! -f ${DIR}/carnation.env ]; then
     echo "carnation.env is not found"
     exit 1
+else
+    echo "using ${DIR}/carnation.env"
 fi
 
-source ./carnation.env
+source ${DIR}/carnation.env
 echo CARNATION_S3_BUCKET_NAME=$CARNATION_S3_BUCKET_NAME
 echo CARNATION_MYSQL_HOST=$CARNATION_MYSQL_HOST
 echo CARNATION_REDIS_HOST=$CARNATION_REDIS_HOST
