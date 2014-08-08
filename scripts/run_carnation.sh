@@ -17,7 +17,7 @@ echo CARNATION_REDIS_HOST=$CARNATION_REDIS_HOST
 
 PWD=`pwd`
 mkdir -p log
-sudo docker kill carnation
+sudo docker stop carnation
 sudo docker rm carnation
 sudo docker run -d                            \
 -v $PWD/log:/home/carnation/magoch_server/log \
