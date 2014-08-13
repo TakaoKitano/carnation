@@ -81,7 +81,7 @@ end
 Rake::PackageTask.new("magoch_server", :noversion) do |t|
   t.package_dir = "build"
   t.package_files.include("**/*")
-  t.package_files.exclude("README.md", "scripts/**/*", "spec/**/*", "doc/**/*", "log/**/*", "db/**/*", "migrate/**/*",  "vendor/**/*", "build/**/*")
+  t.package_files.exclude("README.md", "conf/**/*", "scripts/**/*", "spec/**/*", "doc/**/*", "log/**/*", "db/**/*", "migrate/**/*",  "vendor/**/*", "build/**/*")
   t.need_tar = true
 end
 
