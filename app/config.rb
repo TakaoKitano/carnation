@@ -12,16 +12,16 @@ module CarnationConfig
   end
 
   def mysql_host
-    @host ||= 'localhost'
+    @mysql_host ||= 'localhost'
   end
   def mysql_host=(val)
-    @host = val
+    @mysql_host = val
   end
   def mysql_password
-    @password ||= 'aFx4mMHb3z7d6dy'
+    @mysql_password ||= 'password'
   end
   def mysql_password=(val)
-    @password = val
+    @mysql_password = val
   end
   def sequel_init
     @db = Sequel.connect("mysql2://carnation:#{mysql_password}@#{mysql_host}/carnationdb")
@@ -40,7 +40,7 @@ module CarnationConfig
   end
 
   def s3_bucketname
-    @s3_bucketname ||= 'carnationtest'
+    @s3_bucketname ||= 'xxx'
   end
   def s3_bucketname=(val)
     @s3_bucketname = val
@@ -51,11 +51,24 @@ module CarnationConfig
     end
     @s3bucket
   end
+  def s3_access_key_id
+    @s3_access_key_id ||= 'xxxxx'
+  end
+  def s3_access_key_id=(val)
+    @s3_access_key_id = val
+  end
+  def s3_secret_access_key
+    @s3_secret_access_key ||= 'xxxxx'
+  end
+  def s3_secret_access_key=(val)
+    @s3_secret_access_key = val
+  end
+  
   def s3_init
     require 'aws-sdk'
     AWS.config(
-      :access_key_id => 'AKIAI2ZSXBHOXAWRFCQA',
-      :secret_access_key => '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',
+      :access_key_id => s3_access_key_id,
+      :secret_access_key => s3_secret_access_key,
       :region => 'ap-northeast-1')
     @s3 = AWS::S3.new
     @s3bucket ||= @s3.buckets[s3_bucketname]
@@ -98,8 +111,11 @@ module CarnationConfig
 end
 
 CarnationConfig.mysql_host=ENV['CARNATION_MYSQL_HOST']
+CarnationConfig.mysql_password=ENV['CARNATION_MYSQL_PASSWORD']
 CarnationConfig.redis_host=ENV['CARNATION_REDIS_HOST']
 CarnationConfig.s3_bucketname=ENV['CARNATION_S3_BUCKET_NAME']
+CarnationConfig.s3_access_key_id=ENV['CARNATION_S3_ACCESS_KEY_ID']
+CarnationConfig.s3_secret_access_key=ENV['CARNATION_S3_SECRET_ACCESS_KEY']
 CarnationConfig.parse_application_id=ENV['CARNATION_PARSE_APPLICATION_ID']
 CarnationConfig.parse_rest_api_key=ENV['CARNATION_PARSE_REST_API_KEY']
 CarnationConfig.init
