@@ -47,6 +47,7 @@ RUN bundle install --path vendor/bundle
 ENV PATH /usr/local/bin:$PATH
 VOLUME ["/var/run"]
 VOLUME ["/home/carnation/magoch_server/log"]
+VOLUME ["/home/carnation/magoch_server/conf"]
 CMD ["/usr/bin/supervisord","-c", "/home/carnation/magoch_server/conf/supervisord.conf"]
 
 #
