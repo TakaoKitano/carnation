@@ -123,30 +123,55 @@ rake docker:build
 rake docker:push
 </pre>
 
-### copy scripts to a server (AWS EC2 CoreOS instance will be used)
+# deploy instructions
+
+## launch ec2 instance
+
+-login to AWS console 
+-open https://coreos.com/docs/running-coreos/cloud-providers/ec2/ in a separate browser tab
+-click ami-ab9fbeaa (this will be changed) in the ap-northeast-1 HVM section
+-select t2.medium type
+-select 'default security group' from the existing security group
+-select 'magoaws'  key pair
+-open AWS EC2 instance tab and wait for it is launched
+-note the public ip address of the instance just launched
+
+## copy scripts to a server
 
 <pre>
-scp -i doc/magoaws.pem scripts/*  core@ec2_instance_address:
-scp -i doc/magoaws.pem -r conf core@ec2_instance_address:
+$ scp -i doc/magoaws.pem scripts/*  core@EC2_PUBLIC_IP_ADDRESS:
+$ scp -i doc/magoaws.pem -r conf core@EC2_PUBLIC_IP_ADDRESS:
 </pre>
 
-## run carnation server on the target server
+## login to the server
 
 <pre>
-cp production.env carnation.env (or cp test.env carnation.env)
-sudo docker pull chikaku/carnation
-./run_carnation.sh
+$ ssh -i doc/magoaws.pem core@EC2_PUBLIC_IP_ADDRESS
 </pre>
 
-## run cadvisor 
+
+## config on the server
+
 <pre>
-docker pull google/cadvisor
-./run_cadvisor.sh
+$ docker pull chikaku/carnation
+$ docker pull google/cadvisor
+$ cp production.env carnation.env (or cp test.env carnation.env)
 </pre>
 
 ## config CoreOS to auto start carnation and cadvisor service
 
 <pre>
-sudo systemctl enable /home/core/carnation.service
-sudo systemctl enable /home/core/cadvisor.service
+$ sudo systemctl enable /home/core/carnation.service
+$ sudo systemctl enable /home/core/cadvisor.service
 </pre>
+
+## run carnation and cadvisor server on the target server
+
+<pre>
+$ sudo systemctl start carnation.service
+$ sudo systemctl start cadvisor.service
+</pre>
+
+## add to the load balancer
+
+-on AWS console EC2 ELB, in the instances tab, add the server to the load balancer
