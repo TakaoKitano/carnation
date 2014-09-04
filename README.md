@@ -126,16 +126,27 @@ rake docker:push
 ### copy scripts to a server (AWS EC2 CoreOS instance will be used)
 
 <pre>
-scp -i doc/magoaws.pem scripts/production.env (or test.env) core@ec2_instance_address:carnation.env
-scp -i doc/magoaws.pem scripts/run_carnation.sh  core@ec2_instance_address:
-scp -i doc/magoaws.pem scripts/run_cadvisor.sh  core@ec2_instance_address:
+scp -i doc/magoaws.pem scripts/*  core@ec2_instance_address:
 scp -i doc/magoaws.pem -r conf core@ec2_instance_address:
 </pre>
 
-## run programs on the target server
+## run carnation server on the target server
 
 <pre>
+cp production.env carnation.env (or cp test.env carnation.env)
 sudo docker pull chikaku/carnation
 ./run_carnation.sh
+</pre>
+
+## run cadvisor 
+<pre>
+docker pull google/cadvisor
 ./run_cadvisor.sh
+</pre>
+
+## config CoreOS to auto start carnation and cadvisor service
+
+<pre>
+sudo systemctl enable /home/core/carnation.service
+sudo systemctl enable /home/core/cadvisor.service
 </pre>
