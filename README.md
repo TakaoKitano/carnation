@@ -10,8 +10,8 @@ http://dev.mago-ch.com/webtest/index.html kenken/magomago
 
 ubuntu 14.04 LTS server
 
--adduser carnation
--add magoaws.pem as ~/.ssh/id_rsa
+- adduser carnation
+- add magoaws.pem as ~/.ssh/id_rsa
 
 ### make sure to take the latest
 
@@ -127,14 +127,14 @@ rake docker:push
 
 ## launch ec2 instance
 
--login to AWS console 
--open https://coreos.com/docs/running-coreos/cloud-providers/ec2/ in a separate browser tab
--click ami-ab9fbeaa (this will be changed) in the ap-northeast-1 HVM section
--select t2.medium type
--select 'default security group' from the existing security group
--select 'magoaws'  key pair
--open AWS EC2 instance tab and wait for it is launched
--note the public ip address of the instance just launched
+- login to AWS console 
+- open https://coreos.com/docs/running-coreos/cloud-providers/ec2/ in a separate browser tab
+- click ami-ab9fbeaa (this will be changed) in the ap-northeast-1 HVM section
+- select t2.medium type
+- select 'default security group' from the existing security group
+- select 'magoaws'  key pair
+- open AWS EC2 instance tab and wait for it is launched
+- note the public ip address of the instance just launched
 
 ## copy scripts to a server
 
@@ -174,4 +174,4 @@ $ sudo systemctl start cadvisor.service
 
 ## add to the load balancer
 
--on AWS console EC2 ELB, in the instances tab, add the server to the load balancer
+- on AWS console EC2 ELB, in the instances tab, add the server to the load balancer
