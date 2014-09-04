@@ -130,7 +130,11 @@ rake docker:push
 - login to AWS console 
 - open https://coreos.com/docs/running-coreos/cloud-providers/ec2/ in a separate browser tab
 - click ami-ab9fbeaa (this will be changed) in the ap-northeast-1 HVM section
+- you should have opened the AWS EC2 launch wizard page
 - select t2.medium type
+- check 'Protect against accidental termination'
+- storage size is default (8GB)
+- config tags appropriately
 - select 'default security group' from the existing security group
 - select 'magoaws'  key pair
 - open AWS EC2 instance tab and wait for it is launched
@@ -153,9 +157,14 @@ $ ssh -i doc/magoaws.pem core@EC2_PUBLIC_IP_ADDRESS
 ## config on the server
 
 <pre>
+$ cp production.env carnation.env (or cp test.env carnation.env)
+</pre>
+
+## pull docker images (this should take some time)
+
+<pre>
 $ docker pull chikaku/carnation
 $ docker pull google/cadvisor
-$ cp production.env carnation.env (or cp test.env carnation.env)
 </pre>
 
 ## config CoreOS to auto start carnation and cadvisor service
