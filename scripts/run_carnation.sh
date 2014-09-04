@@ -16,6 +16,8 @@ echo CARNATION_MYSQL_HOST=$CARNATION_MYSQL_HOST
 echo CARNATION_REDIS_HOST=$CARNATION_REDIS_HOST
 
 PWD=`pwd`
+LOGOLD=`date +"log_%Y_%m_%d_%H%M%S"`
+sudo mv log $LOGOLD
 mkdir -p log
 sudo docker stop carnation
 sudo docker rm carnation
