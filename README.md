@@ -147,3 +147,4 @@ rake docker:push
 ## add to the load balancer
 
 - on AWS console EC2 ELB, in the instances tab, add the server to the load balancer
+- wait a few minutes to the load balancer status is changed to 'InService' (this may take time)
