@@ -23,4 +23,4 @@ sudo docker run -d                            \
 -e "CARNATION_PARSE_REST_API_KEY=$CARNATION_PARSE_REST_API_KEY"     \
 -e "RACK_ENV=$RACK_ENV"                                             \
 --name=carnation \
-chikaku/carnation:latest
+chikaku/carnation

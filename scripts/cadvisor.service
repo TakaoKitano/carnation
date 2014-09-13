@@ -5,7 +5,6 @@ Requires=docker.service
 
 [Service]
 TimeoutStartSec=0
-ExecStartPre=/usr/bin/docker pull google/cadvisor
 ExecStartPre=-/usr/bin/docker kill cadvisor
 ExecStartPre=-/usr/bin/docker rm cadvisor
 ExecStart=/bin/bash -c "cd /home/core && ./run_cadvisor.sh"
