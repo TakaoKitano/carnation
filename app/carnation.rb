@@ -6,11 +6,16 @@ require 'json'
 
 class Carnation < Sinatra::Base
 
+  def initialize *args
+    super
+    @logger = CarnationConfig.logger
+  end
+
   configure :development do 
     Bundler.require :development 
     register Sinatra::Reloader 
     also_reload 'app/models.rb'
-    p "Sinatra::Reloader registered"
+    CarnationConfig.logger.info "Sinatra::Reloader registered"
   end 
 
   helpers do
@@ -39,7 +44,7 @@ class Carnation < Sinatra::Base
     #p "expires_at=" + token.expires_at.to_i.to_s
     #p "       now=" + DateTime.now.to_i.to_s
     if token.expires_at.to_i < DateTime.now.to_i
-      p "token expired"
+      @logger.info "token expired"
       request.invalid_token!
     end
     token
@@ -50,6 +55,13 @@ class Carnation < Sinatra::Base
     response['Content-Type'] = 'application/json'
     @token = request.env[Rack::OAuth2::Server::Resource::ACCESS_TOKEN]
     halt(400, "no access token") unless @token
+
+    @logger.info "#{request.request_method} #{request.path}&#{request.query_string}"
+    if @token.user_id
+      @logger.info "#{@token.token} user_id:#{@token.user_id}"
+    elsif @token.viewer_id
+      @logger.info "token:#{@token.token} viewer_id:#{@token.viewer_id}"
+    end
 
     cors_headers
   end
@@ -297,7 +309,7 @@ class Carnation < Sinatra::Base
     #item.status = Item::STATUS[:active]
     item.save
 
-    p "item saved, registering a worker job for item:#{item.id}"
+    @logger.info "item saved, registering a worker job for item:#{item.id}"
     require 'create_derivatives'
     Resque.enqueue(CreateDerivatives, :item_id=>item.id)
 
