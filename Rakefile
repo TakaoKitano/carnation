@@ -89,7 +89,10 @@ namespace :docker do
   desc 'build docker image'
   task :build do
     Rake::Task["package"].invoke
-    sh 'sudo docker build --rm=true -t chikaku/carnation .'
+    gitrev = `git rev-parse --short HEAD`
+    sh "sudo docker build --rm=true -t chikaku/carnation ."
+    image = `sudo docker images -q | head -1 | tr '\n' ' '`
+    sh "sudo docker tag #{image} chikaku/carnation:#{gitrev}"
   end
 
   desc 'push docker images'
