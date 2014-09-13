@@ -192,7 +192,7 @@ class Device < Sequel::Model(:devices)
     self.updated_at = Time.now.to_i
   end
 
-  def push(message)
+  def push_notification(param)
     require 'net/https'
     require 'uri'
     uri = URI.parse('https://api.parse.com/1/push')
@@ -202,7 +202,11 @@ class Device < Sequel::Model(:devices)
     request["X-Parse-Application-Id"] = CarnationConfig.parse_application_id
     request["X-Parse-REST-API-Key"] = CarnationConfig.parse_rest_api_key
     request["Content-Type"] = "application/json"
-    data = {"where"=>{"installationId"=>self.deviceid}, "data" =>{"alert"=>message}}
+    data = { "where"=>{ "installationId"=>self.deviceid}, 
+             "data" =>{ "alert"     => "message from magochannel",
+                        "sound"     => "default",
+                        "viewer_id" => param[:viewer_id],
+                        "item_id"   => param[:item_id] } }
     request.body = data.to_json
     response = http.request(request)
     p response, response.body
@@ -288,10 +292,10 @@ class Viewer < Sequel::Model(:viewers)
     # push notification
     #
     if not r.updated_at or r.updated_at < Time.new.to_i - 60 
-      p "sending push notification for item_id:#{item.id}"
       user = User.find(:id=>item.user_id)
       user.devices.each do |d|
-        d.push("viewer_id:#{self.id} likes item:#{item.id}") # TODO: use template
+        CarnationConfig.logger.info "sending notification from viewer_id:#{self.id} for item_id:#{item.id} to device:#{d.deviceid}"
+        d.push_notification(:viewer_id=>self.id, :item_id=>item.id)
       end 
     else
       p "push notification is suppressed for item_id:#{item.id}"
