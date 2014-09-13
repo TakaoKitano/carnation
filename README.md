@@ -134,7 +134,7 @@ rake docker:push
 - select t2.medium type
 - check 'Protect against accidental termination'
 - storage size is default (8GB)
-- config tags appropriately
+- config tags appropriately (please add tags - creator:yourname, purpose:test or beta)
 - select 'default security group' from the existing security group
 - select 'magoaws'  key pair
 - open AWS EC2 instance tab and wait for it is launched
@@ -142,44 +142,7 @@ rake docker:push
 
 ## copy scripts to a server
 
-<pre>
-$ scp -i doc/magoaws.pem scripts/*  core@EC2_PUBLIC_IP_ADDRESS:
-$ scp -i doc/magoaws.pem -r conf core@EC2_PUBLIC_IP_ADDRESS:
-</pre>
-
-## login to the server
-
-<pre>
-$ ssh -i doc/magoaws.pem core@EC2_PUBLIC_IP_ADDRESS
-</pre>
-
-
-## config on the server
-
-<pre>
-$ cp production.env carnation.env (or cp test.env carnation.env)
-</pre>
-
-## pull docker images (this should take some time)
-
-<pre>
-$ docker pull chikaku/carnation
-$ docker pull google/cadvisor
-</pre>
-
-## config CoreOS to auto start carnation and cadvisor service
-
-<pre>
-$ sudo systemctl enable /home/core/carnation.service
-$ sudo systemctl enable /home/core/cadvisor.service
-</pre>
-
-## run carnation and cadvisor server on the target server
-
-<pre>
-$ sudo systemctl start carnation.service
-$ sudo systemctl start cadvisor.service
-</pre>
+- run carnation_deploy.sh {test|production} server_address
 
 ## add to the load balancer
 
