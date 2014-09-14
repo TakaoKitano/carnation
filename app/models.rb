@@ -202,8 +202,9 @@ class Device < Sequel::Model(:devices)
     request["X-Parse-Application-Id"] = CarnationConfig.parse_application_id
     request["X-Parse-REST-API-Key"] = CarnationConfig.parse_rest_api_key
     request["Content-Type"] = "application/json"
+    message = param[:message] || "message from magochannel"
     data = { "where"=>{ "installationId"=>self.deviceid}, 
-             "data" =>{ "alert"     => "message from magochannel",
+             "data" =>{ "alert"     => message,
                         "sound"     => "default",
                         "viewer_id" => param[:viewer_id],
                         "item_id"   => param[:item_id] } }
