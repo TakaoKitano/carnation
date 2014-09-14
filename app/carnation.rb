@@ -545,7 +545,7 @@ class Carnation < Sinatra::Base
     message = params[:message]
     halt(400, "message required") unless (message && message.length > 0)
 
-    device.push(message)
+    device.push_notification(:message=>message)
 
     @result[:user_id] = user_id
     @result[:deviceid] = device.deviceid
