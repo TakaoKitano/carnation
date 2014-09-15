@@ -8,6 +8,7 @@ docker images | grep cadvisor
 echo configure systemd services
 sudo systemctl enable /home/core/carnation.service 
 sudo systemctl enable /home/core/cadvisor.service
+sudo systemctl daemon-reload
 sudo systemctl stop carnation.service
 sudo systemctl stop cadvisor.service
 sudo systemctl start carnation.service
