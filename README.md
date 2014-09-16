@@ -133,7 +133,7 @@ rake docker:push
 - you should have opened the AWS EC2 launch wizard page
 - select t2.medium type
 - check 'Protect against accidental termination'
-- storage size is default (8GB)
+- set storage size to 24GB
 - config tags appropriately (please add tags - creator:yourname, purpose:test or beta)
 - select 'default security group' from the existing security group
 - select 'magoaws'  key pair
