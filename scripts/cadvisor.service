@@ -4,10 +4,13 @@ After=docker.service
 Requires=docker.service
 
 [Service]
+WorkingDirectory=/home/core
+Type=oneshot
+RemainAfterExit=yes 
 TimeoutStartSec=0
-ExecStartPre=-/usr/bin/docker kill cadvisor
+ExecStartPre=-/usr/bin/docker stop cadvisor
 ExecStartPre=-/usr/bin/docker rm cadvisor
-ExecStart=/bin/bash -c "cd /home/core && ./run_cadvisor.sh"
+ExecStart=/bin/bash -c "./run_cadvisor.sh"
 ExecStop=/usr/bin/docker stop cadvisor
 ExecStopPost=/usr/bin/docker rm cadvisor
 
