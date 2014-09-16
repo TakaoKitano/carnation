@@ -4,10 +4,13 @@ After=docker.service
 Requires=docker.service
 
 [Service]
+WorkingDirectory=/home/core
+Type=oneshot
+RemainAfterExit=yes 
 TimeoutStartSec=0
-ExecStartPre=-/usr/bin/docker stop carnation
-ExecStartPre=-/usr/bin/docker rm carnation
-ExecStart=/bin/bash -c "cd /home/core && ./run_carnation.sh"
+ExecStart=/bin/bash -c "./run_carnation.sh"
+ExecStop=/usr/bin/docker stop carnation
+ExecStopPost=/usr/bin/docker rm carnation
 
 [Install]
 WantedBy=multi-user.target
