@@ -8,8 +8,6 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker stop carnation
 ExecStartPre=-/usr/bin/docker rm carnation
 ExecStart=/bin/bash -c "cd /home/core && ./run_carnation.sh"
-ExecStop=/usr/bin/docker stop carnation
-ExecStopPost=/usr/bin/docker rm carnation
 
 [Install]
 WantedBy=multi-user.target
