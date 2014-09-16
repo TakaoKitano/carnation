@@ -16,11 +16,12 @@ echo CARNATION_MYSQL_HOST=$CARNATION_MYSQL_HOST
 echo CARNATION_REDIS_HOST=$CARNATION_REDIS_HOST
 
 PWD=`pwd`
-LOGOLD=`date +"log_%Y_%m_%d_%H%M%S"`
-sudo mv log $LOGOLD
-mkdir -p log
+#LOGOLD=`date +"log_%Y_%m_%d_%H%M%S"`
+#sudo mv log $LOGOLD
 sudo docker stop carnation
 sudo docker rm carnation
+mkdir -p log
+sudo rm -f log/*.pid
 sudo docker run -d                              \
 -v $PWD/log:/home/carnation/magoch_server/log   \
 -v $PWD/conf:/home/carnation/magoch_server/conf \
@@ -39,3 +40,4 @@ sudo docker run -d                              \
 chikaku/carnation
 
 sudo docker inspect carnation >log/carnation_docker_inspect.log
+exit 0
