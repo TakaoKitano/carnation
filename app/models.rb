@@ -296,7 +296,7 @@ class Viewer < Sequel::Model(:viewers)
       user = User.find(:id=>item.user_id)
       user.devices.each do |d|
         CarnationConfig.logger.info "sending notification from viewer_id:#{self.id} for item_id:#{item.id} to device:#{d.deviceid}"
-        d.push_notification(:viewer_id=>self.id, :item_id=>item.id)
+        d.push_notification(:message=>"ご実家がお気に入りをつけました！", :viewer_id=>self.id, :item_id=>item.id)
       end 
     else
       p "push notification is suppressed for item_id:#{item.id}"
