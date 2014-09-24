@@ -75,7 +75,7 @@ class Carnation < Sinatra::Base
   #
   # create a new user
   #
-  post '/api/v1/user/create' do
+  post '/api/v1/user' do
     halt(400, "access denied") unless @token.user_id
     user = User.find(:id=>@token.user_id) 
     halt(400, "access denied") unless user.can_create_user
@@ -108,7 +108,7 @@ class Carnation < Sinatra::Base
   #
   # delete a new user
   #
-  get '/api/v1/user/delete' do
+  delete '/api/v1/user' do
     halt(400, "access denied") unless @token.user_id
     user = User.find(:id=>@token.user_id) 
     halt(400, "access denied") unless user.role == User::ROLE[:admin]
@@ -124,7 +124,7 @@ class Carnation < Sinatra::Base
   end
 
   #
-  # delete a new user
+  # set user attribute
   #
   post '/api/v1/user/attributes' do
 
@@ -139,9 +139,9 @@ class Carnation < Sinatra::Base
     end
 
     begin
-      target.email = params[:email] if params[:email]
-      target.name = params[:name] if params[:name]
-      target.password = params[:password] if params[:password]
+      target.email = params[:email] if params[:email] and params[:email].length > 0
+      target.name = params[:name] if params[:name] and params[:name].length > 0
+      target.password = params[:password] if params[:password] and params[:password].length > 0
       target.save
     rescue
       halt(400, "sepcified email already exists")
@@ -150,7 +150,7 @@ class Carnation < Sinatra::Base
     @result[:id] = target.id
     @result[:email] = target.email
     @result[:name] = target.name
-    @result[:password] = target.name
+    @result[:password] = params[:password]
     JSON.generate(@result)
   end
 

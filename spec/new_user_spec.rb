@@ -36,34 +36,34 @@ describe Carnation do
 
   describe "create new user" do
     it "should fail with normal user token" do
-      post '/api/v1/user/create', {:email=>@test_email, :password=>"abc", :access_token=>@token}
+      post '/api/v1/user', {:email=>@test_email, :password=>"abc", :access_token=>@token}
       expect(last_response).not_to be_ok
     end
 
     it "should fail without email" do
-      post '/api/v1/user/create', {:password=>"abc", :access_token=>@signup_token}
+      post '/api/v1/user', {:password=>"abc", :access_token=>@signup_token}
       expect(last_response).not_to be_ok
     end
 
     it "should fail without password" do
-      post '/api/v1/user/create', {:email=>@test_email, :access_token=>@signup_token}
+      post '/api/v1/user', {:email=>@test_email, :access_token=>@signup_token}
       expect(last_response).not_to be_ok
     end
 
     it "should fail if same email exists " do
-      post '/api/v1/user/create', {:email=>"test01@chikaku.com", :password=>"abc", :access_token=>@signup_token}
+      post '/api/v1/user', {:email=>"test01@chikaku.com", :password=>"abc", :access_token=>@signup_token}
       expect(last_response).not_to be_ok
     end
 
     it "should be OK with signup user account" do
-      post '/api/v1/user/create', {:email=>@test_email, :password=>"abc", :access_token=>@signup_token}
+      post '/api/v1/user', {:email=>@test_email, :password=>"abc", :access_token=>@signup_token}
       expect(last_response).to be_ok
     end
   end
 
   describe "create and get info and delete user" do
     it "should be OK with signup user account" do
-      post '/api/v1/user/create', {:email=>@test_email, :password=>"abc", :access_token=>@signup_token}
+      post '/api/v1/user', {:email=>@test_email, :password=>"abc", :access_token=>@signup_token}
       expect(last_response).to be_ok
       result = JSON.parse(last_response.body)
 
@@ -75,14 +75,14 @@ describe Carnation do
       get '/api/v1/user', {:user_id=>new_user_id, :access_token=>@admin_token}
       expect(last_response).to be_ok
 
-      get '/api/v1/user/delete', {:user_id=>new_user_id, :access_token=>@admin_token}
+      delete '/api/v1/user', {:user_id=>new_user_id, :access_token=>@admin_token}
       expect(last_response).to be_ok
     end
   end
 
   describe "create and set attribute of user" do
     it "should be OK with signup user account" do
-      post '/api/v1/user/create', {:email=>@test_email, :password=>"abc", :access_token=>@signup_token}
+      post '/api/v1/user', {:email=>@test_email, :password=>"abc", :access_token=>@signup_token}
       expect(last_response).to be_ok
       result = JSON.parse(last_response.body)
 
@@ -107,7 +107,7 @@ describe Carnation do
       post '/api/v1/user/attributes', {:user_id=>new_user_id, :access_token=>token, :email=>"test01@chikaku.com"}
       expect(last_response).not_to be_ok
 
-      get '/api/v1/user/delete', {:user_id=>new_user_id, :access_token=>@admin_token}
+      delete '/api/v1/user', {:user_id=>new_user_id, :access_token=>@admin_token}
       expect(last_response).to be_ok
 
     end
