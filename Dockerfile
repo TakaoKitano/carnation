@@ -59,4 +59,3 @@ ADD launch_resque_worker.rb /home/carnation/magoch_server/
 ADD public/ /home/carnation/magoch_server/public/
 ADD lib/ /home/carnation/magoch_server/lib/
 ADD app/ /home/carnation/magoch_server/app/
-ADD conf/ /home/carnation/magoch_server/conf/
