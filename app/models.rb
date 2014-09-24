@@ -65,8 +65,8 @@ class User < Sequel::Model(:users)
     #
     accesstoken = AccessToken.find(:user_id=>self.id)
     if accesstoken
-      accestoken.require_modification = false
-      accestoken.destroy
+      accesstoken.require_modification = false
+      accesstoken.destroy
     end
 
     #
@@ -268,8 +268,8 @@ class Viewer < Sequel::Model(:viewers)
     end
     accesstoken = AccessToken.find(:viewer_id=>self.id)
     if accesstoken
-      accestoken.require_modification = false
-      accestoken.destroy
+      accesstoken.require_modification = false
+      accesstoken.destroy
     end
     super
   end

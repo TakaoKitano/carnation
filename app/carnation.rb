@@ -80,16 +80,77 @@ class Carnation < Sinatra::Base
     user = User.find(:id=>@token.user_id) 
     halt(400, "access denied") unless user.can_create_user
 
-    #target = User.find(:email=>params[:email])
-    #halt(400, "user of sepcified email exists") if target
+    email = params[:email]
+    halt(400, "invalid parameter email") unless email and email.length > 0
 
+    password = params[:password]
+    halt(400, "invalid parameter password") unless password and password.length > 0
+
+    name = email.sub('@', '_')
     begin
-      target = User.create(:email=>params[:email])
+      target = User.create(:email=>params[:email], :password=>params[:password], :name=>name)
     rescue
-      halt(400, "user of sepcified email exists or bad thing happend")
+      halt(400, "sepcified email already exists")
     end
+
+    client = Client.create()
+    viewer = target.create_viewer(target.name + "_viewer", client)
+    group = target.create_group(target.name + "_group")
+    group.add_viewer(viewer)
+  
     @result[:id] = target.id
     @result[:email] = target.email
+    @result[:name] = target.name
+    @result[:password] = params[:password]
+    JSON.generate(@result)
+  end
+
+  #
+  # delete a new user
+  #
+  get '/api/v1/user/delete' do
+    halt(400, "access denied") unless @token.user_id
+    user = User.find(:id=>@token.user_id) 
+    halt(400, "access denied") unless user.role == User::ROLE[:admin]
+    target = User.find(:id=>params[:user_id]) 
+    halt(404, "user not found") unless target
+
+    target.destroy()
+  
+    @result[:id] = target.id
+    @result[:email] = target.email
+    @result[:name] = target.name
+    JSON.generate(@result)
+  end
+
+  #
+  # delete a new user
+  #
+  post '/api/v1/user/attributes' do
+
+    halt(400, "token invalid") unless @token.user_id
+    user = User.find(:id=>@token.user_id) 
+    halt(400, "token invalid") unless user
+    target = User.find(:id=>params[:user_id]) 
+    halt(404, "no such user") unless target
+
+    if user.id != target.id and user.role != User::ROLE[:admin]
+      halt(400, "access denied")
+    end
+
+    begin
+      target.email = params[:email] if params[:email]
+      target.name = params[:name] if params[:name]
+      target.password = params[:password] if params[:password]
+      target.save
+    rescue
+      halt(400, "sepcified email already exists")
+    end
+
+    @result[:id] = target.id
+    @result[:email] = target.email
+    @result[:name] = target.name
+    @result[:password] = target.name
     JSON.generate(@result)
   end
 
@@ -156,6 +217,7 @@ class Carnation < Sinatra::Base
       halt(400, "access denied") unless user.can_write_to_item_of(owner)
     else 
       halt(400, "extension required") unless extension
+      halt(400, "extension required") unless extension.length > 0
       halt(400, "extension invalid") unless extension.index('.') == 0
       item = Item.new(:user_id=>owner.id, :extension=>extension)
         item.status = Item::STATUS[:initiated]
@@ -195,6 +257,7 @@ class Carnation < Sinatra::Base
       halt(400, "access denied") unless user.can_write_to_item_of(owner)
     else 
       halt(400, "extension required") unless extension
+      halt(400, "extension required") unless extension.length > 0
       halt(400, "extension invalid") if extension.index('.') != 0
       item = Item.new(:user_id=>owner.id, :extension=>extension)
         item.status = Item::STATUS[:initiated]
@@ -480,9 +543,11 @@ class Carnation < Sinatra::Base
     user_id = check_user_id_parameter
 
     deviceid = params[:deviceid]
-    halt(400, "deviceid required") unless deviceid
+    p deviceid
+    p deviceid.length
+    halt(400, "deviceid required") unless deviceid and deviceid.length > 0
     devicetype = params[:devicetype].to_i
-    halt(400, "devietype required") unless devicetype
+    halt(400, "devietype required") unless devicetype and devicetype > 0
 
     begin
       device = Device.create(:deviceid=>deviceid, :user_id=>user_id, :devicetype=>devicetype)
