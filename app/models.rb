@@ -1,6 +1,7 @@
 require 'sequel'
 require 'mysql2'
 require 'json'
+require 'digest/sha1'
 require 'digest/sha2'
 require 'rack/oauth2'
 require 'securerandom' 
@@ -468,6 +469,21 @@ class Item < Sequel::Model(:items)
         tmpfile.write(chunk)
         tmpfile.flush
       }
+      CarnationConfig.logger.info "#{item.id}:item downloaded path=#{tmpfile.path}"
+      CarnationConfig.logger.info "#{item.id}:item downloaded size=#{tmpfile.size}"
+      digest = Digest::SHA1.file(tmpfile).hexdigest
+      CarnationConfig.logger.info "#{item.id}:sha1sum of downloaded s3 file=#{digest}"
+      
+      if item.file_hash
+        CarnationConfig.logger.info "#{item.id}:file_hash=#{item.file_hash}"
+        if item.file_hash != digest
+          CarnationConfig.logger.info "#{item.id}:error file_hash unmatch"
+          return false
+        end
+      else
+        CarnationConfig.logger.info "#{item.id}:no file_hash"
+        item.file_hash = digest
+      end
 
       #
       # create image or video derivatives

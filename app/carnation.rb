@@ -35,6 +35,14 @@ class Carnation < Sinatra::Base
       end
       return target.id
     end
+
+    def get_non_zero_length_parameter(sym)
+      value = params[sym]
+      if value and value.length > 0 
+        return value
+      end
+      return nil
+    end
   end
 
   use Rack::OAuth2::Server::Resource::Bearer do |request|
@@ -208,7 +216,9 @@ class Carnation < Sinatra::Base
     halt(400, "access denied") unless user.can_write_to_item_of owner
 
     item_id = params[:item_id].to_i
-    extension = params[:extension] 
+    extension = get_non_zero_length_parameter(:extension) 
+    file_hash = get_non_zero_length_parameter(:file_hash)
+    @logger.info "file_hash=#{file_hash}"
 
     if item_id > 0 
       item = Item.find(:id=>item_id)
@@ -217,17 +227,25 @@ class Carnation < Sinatra::Base
       halt(400, "access denied") unless user.can_write_to_item_of(owner)
     else 
       halt(400, "extension required") unless extension
-      halt(400, "extension required") unless extension.length > 0
       halt(400, "extension invalid") unless extension.index('.') == 0
-      item = Item.new(:user_id=>owner.id, :extension=>extension)
-        item.status = Item::STATUS[:initiated]
-        item.title = params[:title]
-        item.description = params[:description]
-        item.width = params[:width].to_i
-        item.height = params[:height].to_i 
-        item.duration = params[:duration].to_i
-        item.filesize = params[:filesize].to_i
-      item.save
+
+      if file_hash
+          halt(400, "file_hash conflict") if Item.find(:file_hash=>file_hash)
+      end
+
+      begin
+        item = Item.create(:user_id=>owner.id, :extension=>extension) do |item|
+          item.status = Item::STATUS[:initiated]
+          item.title = params[:title]
+          item.description = params[:description]
+          item.file_info = params[:file_info]
+          if file_hash
+            item.file_hash = file_hash
+          end
+        end
+      rescue
+        halt(400, "file_hash may conflict")
+      end
     end
 
     @result[:item_id] = item.id
@@ -248,7 +266,8 @@ class Carnation < Sinatra::Base
     halt(400, "access denied") unless user.can_write_to_item_of owner
 
     item_id = params[:item_id].to_i
-    extension = params[:extension] 
+    extension = get_non_zero_length_parameter(:extension) 
+    file_hash = get_non_zero_length_parameter(:file_hash)
 
     if item_id > 0 
       item = Item.find(:id=>item_id)
@@ -257,11 +276,21 @@ class Carnation < Sinatra::Base
       halt(400, "access denied") unless user.can_write_to_item_of(owner)
     else 
       halt(400, "extension required") unless extension
-      halt(400, "extension required") unless extension.length > 0
       halt(400, "extension invalid") if extension.index('.') != 0
-      item = Item.new(:user_id=>owner.id, :extension=>extension)
-        item.status = Item::STATUS[:initiated]
-      item.save
+      if file_hash
+        halt(400, "file_hash conflict") if Item.find(:file_hash=>file_hash)
+      end
+
+      begin
+        item = Item.create(:user_id=>owner.id, :extension=>extension) do |item|
+          item.status = Item::STATUS[:initiated]
+          if file_hash
+            item.file_hash = file_hash
+          end
+        end
+      rescue
+        halt(400, "file_hash conflict") 
+      end
     end
 
     form = CarnationConfig.s3bucket.presigned_post(:key => item.path+item.extension)
@@ -367,9 +396,15 @@ class Carnation < Sinatra::Base
     valid_after = params["valid_after"].to_i
     valid_after = 0 if valid_after <= 0
 
+    file_hash = get_non_zero_length_parameter(:file_hash)
+    if file_hash
+      halt(400, "file_hash conflict") if Item.where(:file_hash=>file_hash).all.length > 1
+      if item.file_hash
+        halt(400, "file_hash different") if item.file_hash != file_hash
+      end
+    end
+
     item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
-    # item.status will be changed by the create_derivatives worker
-    #item.status = Item::STATUS[:active]
     item.save
 
     @logger.info "item saved, registering a worker job for item:#{item.id}"
