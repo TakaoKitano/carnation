@@ -208,17 +208,53 @@ $(document).ready(function() {
     <a id="resque" href="" target="blank">open resque worker status</a>
     <hr/>
 
-<h3>create user</h3>
+<h3>create or delete user</h3>
 
 <div data-collapse class="api">
     <h4>POST /api/v1/user/create - create a new user</h4>
     <form class="carnation_api" action="/api/v1/user/create" method="POST" >
-      <p>The behavior of this api will be soon modified. DO NOT USE. create a new user with the specified email. Caller must be a signup user(please see db/builtin_accounts.rb)
+      <p>Creates a new user with the specified email and password. Caller must be a signup user(please see db/builtin_accounts.rb)<br/>
+      Note that carnation server NEVER stores the raw password. You must remember the password by yourself, or you will need to reset your password.
       </p>
       <fieldset>
         <div>
           <label>email(mandatory)</label><input type="text" name="email"/>
+          <label>password(mandatory)</label><input type="text" name="password"/> 
         </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>POST /api/v1/user/attributes - set name or password for user</h4>
+    <form class="carnation_api" action="/api/v1/user/attributes" method="POST" >
+      <p>Sets the new user name or password. Caller must be an admin user or user of specified user_id
+      </p>
+      <fieldset>
+        <div>
+          <label>user_id(mandatory)</label><input type="text" name="user_id"/><br/>
+          <label>email(optional)</label><input type="text" name="email"/><br/>
+          <label>name(optional)</label><input type="text" name="name"/><br/>
+          <label>password(optional)</label><input type="text" name="password"/><br/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>POST /api/v1/user/delete - delete a user</h4>
+    <form class="carnation_api" action="/api/v1/user/delete" method="GET" >
+      <p>Deletes a user with the specified id. Caller must be an admin user(please see db/builtin_accounts.rb)
+      </p>
+      <fieldset>
+        <div>
+          <label>user_id(mandatory)</label><input type="text" name="user_id"/>
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
         <input type="radio" name="tokentype" value="user" checked>as user</input>
     </form>
