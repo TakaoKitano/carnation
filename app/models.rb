@@ -305,7 +305,7 @@ class Viewer < Sequel::Model(:viewers)
 
     r.count = 0 if not r.count
     r.count = r.count + 1
-    r.save
+    r.save()
   end
 
   def can_read_item_of(owner)
@@ -398,7 +398,7 @@ class Item < Sequel::Model(:items)
   def after_create
     super
     self.path = sprintf("%08d", self.user_id) + "/" + sprintf("%08d", self.id)
-    self.save
+    self.save()
   end
 
   def before_destroy
@@ -491,8 +491,10 @@ class Item < Sequel::Model(:items)
       CarnationConfig.logger.info "#{item.id}:getting mime_type"
       mime_type = FileMagic.new(:mime_type).file(tmpfile.path)
       if mime_type.start_with?("image")
+        CarnationConfig.logger.info "#{item.id}:calling create_image_derivatives"
         result = item.create_image_derivatives(tmpfile.path, mime_type)
       elsif mime_type.start_with?("video")
+        CarnationConfig.logger.info "#{item.id}:calling create_video_derivatives"
         result = item.create_video_derivatives(tmpfile.path, mime_type)
       end
     rescue
@@ -516,18 +518,23 @@ class Item < Sequel::Model(:items)
       timestr = original.get_exif_by_entry('DateTime')[0][1]
       self.created_at = Time.parse(timestr.sub(':', '/').sub(':', '/')).to_i
     rescue
-      CarnationConfig.logger.debug "#{self.id}:(not fatal)could not get exif DateTime"
+      CarnationConfig.logger.info "#{self.id}:(not fatal)could not get exif DateTime"
     end
 
     result = Derivative.generate_derivatives(self.id, original)
+    CarnationConfig.logger.info "#{self.id}:saving item..."
 
-    self.width = original.columns
-    self.height = original.rows
-    self.duration = 0
-    self.filesize = File.size(filepath)
-    self.mime_type = mime_type
-    self.status = Item::STATUS[:active] if result
-    self.save
+    begin
+      self.width = original.columns
+      self.height = original.rows
+      self.duration = 0
+      self.filesize = File.size(filepath)
+      self.mime_type = mime_type
+      self.status = Item::STATUS[:active] if result
+      self.save()
+    rescue
+      CarnationConfig.logger.info "#{self.id}:item save error, file_hash conflict"
+    end
 
     CarnationConfig.logger.info "#{self.id}:create_image_derivatives returns #{result}"
     return result
@@ -555,13 +562,17 @@ class Item < Sequel::Model(:items)
       if original
         original.rotate!(rotation) if (rotation && rotation != 0)
         result = Derivative.generate_derivatives(self.id, original)
-        self.width = movie.width
-        self.height = movie.height
-        self.duration = movie.duration
-        self.filesize = movie.size
-        self.mime_type = mime_type
-        self.status = Item::STATUS[:active] if result
-        self.save
+        begin
+          self.width = movie.width
+          self.height = movie.height
+          self.duration = movie.duration
+          self.filesize = movie.size
+          self.mime_type = mime_type
+          self.status = Item::STATUS[:active] if result
+          self.save()
+        rescue
+          CarnationConfig.logger.info "#{self.id}:item save error, file_hash conflict"
+        end
       end
 
     rescue
@@ -601,7 +612,7 @@ class Derivative < Sequel::Model(:derivatives)
   def after_create
     super
     self.path = self.item.path + "_" + sprintf("%02d", self.index)
-    self.save
+    self.save()
   end
 
   def self.generate_derivatives(item_id, original)
@@ -667,7 +678,7 @@ class Derivative < Sequel::Model(:derivatives)
         self.status = STATUS[:active]
         self.filesize = File.size(filepath)
         self.mime_type = "image/jpeg"
-        self.save
+        self.save()
       rescue
         CarnationConfig.logger.info "#{self.item_id}:error while saving to DB"
         result = false

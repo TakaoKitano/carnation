@@ -217,21 +217,33 @@ class Carnation < Sinatra::Base
 
     item_id = params[:item_id].to_i
     extension = get_non_zero_length_parameter(:extension) 
+
     file_hash = get_non_zero_length_parameter(:file_hash)
     @logger.info "file_hash=#{file_hash}"
+    if file_hash
+        halt(400, "file_hash conflict") if Item.find(:file_hash=>file_hash)
+    end
 
     if item_id > 0 
       item = Item.find(:id=>item_id)
       halt(400, "item_id invalid") unless item
       halt(400, "access denied") unless owner.id == item.user_id
       halt(400, "access denied") unless user.can_write_to_item_of(owner)
+      begin
+        item.status = Item::STATUS[:initiated]
+        item.title = params[:title]
+        item.description = params[:description]
+        item.file_info = params[:file_info]
+        if file_hash
+          item.file_hash = file_hash
+        end
+        item.save()
+      rescue
+        halt(400, "file_hash may conflict")
+      end
     else 
       halt(400, "extension required") unless extension
       halt(400, "extension invalid") unless extension.index('.') == 0
-
-      if file_hash
-          halt(400, "file_hash conflict") if Item.find(:file_hash=>file_hash)
-      end
 
       begin
         item = Item.create(:user_id=>owner.id, :extension=>extension) do |item|
@@ -268,18 +280,27 @@ class Carnation < Sinatra::Base
     item_id = params[:item_id].to_i
     extension = get_non_zero_length_parameter(:extension) 
     file_hash = get_non_zero_length_parameter(:file_hash)
+    if file_hash
+      halt(400, "file_hash conflict") if Item.find(:file_hash=>file_hash)
+    end
 
     if item_id > 0 
       item = Item.find(:id=>item_id)
       halt(400, "item_id invalid") unless item
       halt(400, "access denied") unless owner.id == item.user_id
       halt(400, "access denied") unless user.can_write_to_item_of(owner)
+      begin
+        item.status = Item::STATUS[:initiated]
+        if file_hash
+          item.file_hash = file_hash
+        end
+        item.save()
+      rescue
+        halt(400, "file_hash conflict") 
+      end
     else 
       halt(400, "extension required") unless extension
       halt(400, "extension invalid") if extension.index('.') != 0
-      if file_hash
-        halt(400, "file_hash conflict") if Item.find(:file_hash=>file_hash)
-      end
 
       begin
         item = Item.create(:user_id=>owner.id, :extension=>extension) do |item|
@@ -336,7 +357,7 @@ class Carnation < Sinatra::Base
       item.destroy
     else
       item.status = Item::STATUS[:deleted]
-      item.save
+      item.save()
     end
     @result[:id] = item.id
     @result[:status] = item.status
@@ -374,7 +395,7 @@ class Carnation < Sinatra::Base
 
     if item.status == Item::STATUS[:deleted] 
       item.status = Item::STATUS[:active]
-      item.save
+      item.save()
     end
     @result[:id] = item.id
     @result[:status] = item.status
@@ -397,15 +418,20 @@ class Carnation < Sinatra::Base
     valid_after = 0 if valid_after <= 0
 
     file_hash = get_non_zero_length_parameter(:file_hash)
-    if file_hash
-      halt(400, "file_hash conflict") if Item.where(:file_hash=>file_hash).all.length > 1
-      if item.file_hash
-        halt(400, "file_hash different") if item.file_hash != file_hash
+    begin
+      if file_hash
+        halt(400, "file_hash conflict") if Item.where(:file_hash=>file_hash).all.length > 1
+        #
+        # override the file_hash that was set on initiate
+        #
+        item.file_hash = file_hash
+        @logger.info "item.file_hash replaced with the new value"
       end
+      item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
+      item.save()
+    rescue
+      halt(400, "file_hash conflict") if Item.where(:file_hash=>file_hash).all.length > 1
     end
-
-    item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
-    item.save
 
     @logger.info "item saved, registering a worker job for item:#{item.id}"
     require 'create_derivatives'
