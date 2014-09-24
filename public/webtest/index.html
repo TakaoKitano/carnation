@@ -208,11 +208,11 @@ $(document).ready(function() {
     <a id="resque" href="" target="blank">open resque worker status</a>
     <hr/>
 
-<h3>create or delete user</h3>
+<h4>user management</h4>
 
 <div data-collapse class="api">
-    <h4>POST /api/v1/user/create - create a new user</h4>
-    <form class="carnation_api" action="/api/v1/user/create" method="POST" >
+    <h4>POST /api/v1/user - create a new user</h4>
+    <form class="carnation_api" action="/api/v1/user" method="POST" >
       <p>Creates a new user with the specified email and password. Caller must be a signup user(please see db/builtin_accounts.rb)<br/>
       Note that carnation server NEVER stores the raw password. You must remember the password by yourself, or you will need to reset your password.
       </p>
@@ -246,8 +246,8 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>POST /api/v1/user/delete - delete a user</h4>
-    <form class="carnation_api" action="/api/v1/user/delete" method="GET" >
+    <h4>DELETE /api/v1/user - delete a user</h4>
+    <form class="carnation_api" action="/api/v1/user" method="DELETE" >
       <p>Deletes a user with the specified id. Caller must be an admin user(please see db/builtin_accounts.rb)
       </p>
       <fieldset>
@@ -259,8 +259,6 @@ $(document).ready(function() {
         <input type="radio" name="tokentype" value="user" checked>as user</input>
     </form>
 </div>
-
-<h3>query user</h3>
 
 <div data-collapse class="api">
     <h4>GET /api/v1/user - get user info</h4>
@@ -293,6 +291,8 @@ $(document).ready(function() {
       </fieldset>
     </form>
 </div>
+
+  <hr/>
 
 <h3>upload item</h3>
 
@@ -341,7 +341,7 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>POST /api/vi/item/initiate_post  - initiate item upload with browser (test purpose only) </h4>
+    <h4>POST /api/v1/item/initiate_post  - initiate item upload with browser (test purpose only) </h4>
     <form  action="/api/v1/item/initiate_post" method="POST" target="upload">
       <fieldset>
         <div >
@@ -390,7 +390,7 @@ $(document).ready(function() {
 </div>
 
 <div data-collapse class="api">
-    <h4>DELETE /api/vi/item - delete an item</h4>
+    <h4>DELETE /api/v1/item - delete an item</h4>
     <form class="carnation_api" action="/api/v1/item" method="DELETE">
       <p>itemを削除します。item activate の前によばれた場合は、アイテムのレコードを完全に削除します。そうでない場合は item.status が deleted 状態になりますが、データとしては削除されません
       </p>
