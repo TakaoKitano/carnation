@@ -313,16 +313,16 @@ $(document).ready(function() {
           <label>item_id(optional)</label> <input type="text" name="item_id"/>
         </div>
         <div >
+          <label>file_hash(optional)</label> <input type="text" size='60' name="file_hash"/>
+        </div>
+        <div >
+          <label>file_info(optional)</label> <input type="text" name="file_info"/>
+        </div>
+        <div >
           <label>title(optional)</label> <input type="text" name="title"/>
         </div>
         <div >
           <label>description(optional)</label> <input type="text" name="description"/>
-        </div>
-        <div >
-          <label>width(optional)</label> <input type="number" name="width"/>
-        </div>
-        <div >
-          <label>height(optional)</label> <input type="number" name="height"/>
         </div>
         <div >
           <label>extension(mandatory)</label>
@@ -353,6 +353,12 @@ $(document).ready(function() {
           optional (required if you are retrying to upload same file again)
         </div>
         <div >
+          <label>file_hash(optional)</label> <input type="text" size='60' name="file_hash"/>
+        </div>
+        <div >
+          <label>file_info(optional)</label> <input type="text" name="file_info"/>
+        </div>
+        <div >
           <label>extension</label>
           <select name="extension">
             <option value=".jpg">.jpg</option>
@@ -377,6 +383,10 @@ $(document).ready(function() {
         <div >
           <label>item_id</label><input type="text" name="item_id"/>
           mandatory
+        </div>
+        <div >
+          <label>file_hash</label> <input type="text" size='60' name="file_hash"/>
+          optional
         </div>
         <div >
           <label>valid_after</label><input type="text" name="valid_after"/>
