@@ -36,8 +36,8 @@ RUN gem install bundler
 # setup application
 #
 RUN mkdir -p /home/carnation/magoch_server
-ADD build/magoch_server/Gemfile      /home/carnation/magoch_server/Gemfile
-ADD build/magoch_server/Gemfile.lock /home/carnation/magoch_server/Gemfile.lock
+ADD Gemfile      /home/carnation/magoch_server/
+ADD Gemfile.lock /home/carnation/magoch_server/
 WORKDIR /home/carnation/magoch_server
 RUN bundle install --path vendor/bundle
 
@@ -53,6 +53,10 @@ CMD ["/usr/bin/supervisord","-c", "/home/carnation/magoch_server/conf/supervisor
 #
 # add carnation
 #
-WORKDIR /home/carnation
-ADD build/magoch_server.tgz /home/carnation
-WORKDIR /home/carnation/magoch_server
+ADD config.ru /home/carnation/magoch_server/
+ADD unicorn.rb /home/carnation/magoch_server/
+ADD launch_resque_worker.rb /home/carnation/magoch_server/
+ADD public/ /home/carnation/magoch_server/public/
+ADD lib/ /home/carnation/magoch_server/lib/
+ADD app/ /home/carnation/magoch_server/app/
+ADD conf/ /home/carnation/magoch_server/conf/
