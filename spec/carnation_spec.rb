@@ -60,42 +60,6 @@ describe Carnation do
       get '/api/v1/user_by_email', {:email=>@user.email}
       expect(last_response.status).to eq(400)
     end
-
-  end
-
-  describe "post initiate item upload" do
-    it "should be OK with user_id, extension and token" do
-      post '/api/v1/item/initiate', {:user_id=>@user.id, :extension=>".jpg", :access_token=>@token}
-      expect(last_response).to be_ok
-      result = JSON.parse(last_response.body)
-      expect(result['item_id']).to be > 0
-      expect(result['status']).to eq(0)
-      expect(result['url'].length).to be >0
-      expect(result['url'].index('https')).to eq(0)
-      delete '/api/v1/item', {:item_id=>result['item_id'], :access_token=>@token}
-      expect(last_response).to be_ok
-    end
-
-    it "should not be OK without token" do
-      post '/api/v1/item/initiate', {:user_id=>@user.id, :extension=>".jpg"}
-      expect(last_response.status).to eq(400)
-    end
-
-    it "should not be OK without user_id" do
-      post '/api/v1/item/initiate', {:extension=>".jpg", :access_token=>@token}
-      expect(last_response.status).to eq(400)
-    end
-
-    it "should not be OK without extension" do
-      post '/api/v1/item/initiate', {:user_id=>@user.id, :access_token=>@token}
-      expect(last_response.status).to eq(400)
-    end
-
-    it "should not be OK with invalid user_id" do
-      post '/api/v1/item/initiate', {:user_id=>-1, :extension=>".jpg", :access_token=>@token}
-      expect(last_response.status).to eq(400)
-    end
-
   end
 
   after do

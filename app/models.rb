@@ -28,6 +28,7 @@ class User < Sequel::Model(:users)
     super
     self.role = values[:role] || ROLE[:common] 
     self.status = STATUS[:created]
+    self.timezone = CarnationConfig.default_timezone
     self.created_at = Time.now.to_i
   end
 
@@ -248,6 +249,7 @@ class Viewer < Sequel::Model(:viewers)
     super
     self.status = STATUS[:created]
     self.valid_through = Time.now.to_i + 3600 * 24 * 365
+    self.timezone = CarnationConfig.default_timezone
     self.created_at = Time.now.to_i
   end
 
@@ -514,11 +516,23 @@ class Item < Sequel::Model(:items)
     original = Magick::Image.read(filepath).first.auto_orient
     return false unless original
 
-    begin
-      timestr = original.get_exif_by_entry('DateTime')[0][1]
-      self.created_at = Time.parse(timestr.sub(':', '/').sub(':', '/')).to_i
-    rescue
-      CarnationConfig.logger.info "#{self.id}:(not fatal)could not get exif DateTime"
+    #
+    # calculate shot_at from exif and timezone
+    #
+    if not self.shot_at
+      diff = self.timezone ? self.timezone * 3600 : 0
+      begin
+        timestr = original.get_exif_by_entry('DateTime')[0][1]
+        epoch = Time.parse(timestr.sub(':', '/').sub(':', '/')).to_i
+        CarnationConfig.logger.info "#{self.id}:epoch from exif = #{epoch}"
+        CarnationConfig.logger.info "#{self.id}:shot_at = epoch + #{diff}"
+        self.shot_at = epoch + diff
+      rescue
+        CarnationConfig.logger.info "#{self.id}:(not fatal)could not get exif DateTime"
+        self.shot_at = self.created_at # last resort
+      end
+    else
+      CarnationConfig.logger.info "#{self.id}:shot_at exists"
     end
 
     result = Derivative.generate_derivatives(self.id, original)

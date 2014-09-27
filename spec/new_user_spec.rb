@@ -80,38 +80,42 @@ describe Carnation do
     end
   end
 
-  describe "create and set attribute of user" do
-    it "should be OK with signup user account" do
+  describe "set attribute of user" do
+    before do
+      p "create test user"
       post '/api/v1/user', {:email=>@test_email, :password=>"abc", :access_token=>@signup_token}
       expect(last_response).to be_ok
       result = JSON.parse(last_response.body)
-
-      new_user_id = result["id"]
-      new_user_email = result["email"]
-      new_user_name = result["name"]
+      @new_user_id = result["id"]
+      @new_user_email = result["email"]
+      @new_user_name = result["name"]
       expect(result["email"]).to eq(@test_email)
-
-      user = User.find(:email=>new_user_email)
-      access_token = AccessToken.new(user).save
-      token = access_token.token
-
-      post '/api/v1/user/attributes', {:user_id=>new_user_id, :access_token=>token}
-      expect(last_response).to be_ok
-
-      post '/api/v1/user/attributes', {:user_id=>new_user_id, :access_token=>token, :password=>"yesyes"}
-      expect(last_response).to be_ok
-      post '/api/v1/user/attributes', {:user_id=>new_user_id, :access_token=>token, :email=>"yesyes@email.com"}
-      post '/api/v1/user/attributes', {:user_id=>new_user_id, :access_token=>token, :name=>"yesman"}
-      expect(last_response).to be_ok
-
-      post '/api/v1/user/attributes', {:user_id=>new_user_id, :access_token=>token, :email=>"test01@chikaku.com"}
-      expect(last_response).not_to be_ok
-
-      delete '/api/v1/user', {:user_id=>new_user_id, :access_token=>@admin_token}
-      expect(last_response).to be_ok
-
+      @new_user = User.find(:email=>@new_user_email)
+      @new_access_token = AccessToken.new(@new_user).save
+      @new_user_token = @new_access_token.token
     end
-
+    describe "/api/v1/user/attributes" do
+      it "should be OK with no parameter" do
+        post '/api/v1/user/attributes', {:user_id=>@new_user_id, :access_token=>@new_user_token}
+        expect(last_response).to be_ok
+      end
+      it "can change email" do
+        post '/api/v1/user/attributes', {:user_id=>@new_user_id, :access_token=>@new_user_token, :email=>'brabrabra@email.com'}
+        expect(last_response).to be_ok
+      end
+      it "can change name" do
+        post '/api/v1/user/attributes', {:user_id=>@new_user_id, :access_token=>@new_user_token, :name=>'newname'}
+        expect(last_response).to be_ok
+      end
+      it "can change timezone" do
+        post '/api/v1/user/attributes', {:user_id=>@new_user_id, :access_token=>@new_user_token, :timezone=>1}
+        expect(last_response).to be_ok
+      end
+    end
+    after do
+      @new_access_token.destroy if @new_access_token
+      @new_user.destroy if @new_user
+    end
   end
 
   describe "get user info" do
