@@ -146,10 +146,14 @@ class Carnation < Sinatra::Base
       halt(400, "access denied")
     end
 
+    email = get_non_zero_length_parameter(:email) 
+    name = get_non_zero_length_parameter(:name) 
+    timezone = get_non_zero_length_parameter(:timezone) 
+
     begin
-      target.email = params[:email] if params[:email] and params[:email].length > 0
-      target.name = params[:name] if params[:name] and params[:name].length > 0
-      target.password = params[:password] if params[:password] and params[:password].length > 0
+      target.email = email if email 
+      target.name = name if name
+      target.timezone = timezone.to_i if timezone
       target.save
     rescue
       halt(400, "sepcified email already exists")
@@ -218,6 +222,9 @@ class Carnation < Sinatra::Base
     item_id = params[:item_id].to_i
     extension = get_non_zero_length_parameter(:extension) 
 
+    timezone = get_non_zero_length_parameter(:timezone)
+    shot_at = get_non_zero_length_parameter(:shot_at)
+
     file_hash = get_non_zero_length_parameter(:file_hash)
     @logger.info "file_hash=#{file_hash}"
     if file_hash
@@ -229,35 +236,29 @@ class Carnation < Sinatra::Base
       halt(400, "item_id invalid") unless item
       halt(400, "access denied") unless owner.id == item.user_id
       halt(400, "access denied") unless user.can_write_to_item_of(owner)
-      begin
-        item.status = Item::STATUS[:initiated]
-        item.title = params[:title]
-        item.description = params[:description]
-        item.file_info = params[:file_info]
-        if file_hash
-          item.file_hash = file_hash
-        end
-        item.save()
-      rescue
-        halt(400, "file_hash may conflict")
-      end
     else 
       halt(400, "extension required") unless extension
       halt(400, "extension invalid") unless extension.index('.') == 0
-
-      begin
-        item = Item.create(:user_id=>owner.id, :extension=>extension) do |item|
-          item.status = Item::STATUS[:initiated]
-          item.title = params[:title]
-          item.description = params[:description]
-          item.file_info = params[:file_info]
-          if file_hash
-            item.file_hash = file_hash
-          end
-        end
-      rescue
-        halt(400, "file_hash may conflict")
+      item = Item.create(:user_id=>owner.id, :extension=>extension)
+    end
+    begin
+      item.status = Item::STATUS[:initiated]
+      item.title = params[:title]
+      item.description = params[:description]
+      item.file_info = params[:file_info]
+      item.shot_at = shot_at.to_i if shot_at
+      if timezone
+        item.timezone = timezone.to_i
+      else
+        item.timezone = owner.timezone
       end
+
+      if file_hash
+        item.file_hash = file_hash
+      end
+      item.save()
+    rescue
+      halt(400, "file_hash may conflict")
     end
 
     @result[:item_id] = item.id
@@ -490,6 +491,14 @@ class Carnation < Sinatra::Base
       if created_after > 0
         ds = ds.where('created_at > ?', created_after)
       end
+      shot_before = params["shot_before"].to_i
+      if shot_before > 0
+        ds = ds.where('shot_at < ?', shot_before)
+      end
+      shot_after = params["shot_after"].to_i
+      if shot_after > 0
+        ds = ds.where('shot_at > ?', shot_after)
+      end
       updated_before = params["updated_before"].to_i
       if updated_before > 0
         ds = ds.where('updated_at < ?', updated_before)
@@ -510,6 +519,8 @@ class Carnation < Sinatra::Base
       sort_by = "created_at"
       if params[:order_by] == "updated_at"
         sort_by = "updated_at"
+      elsif params[:order_by] == "shot_at"
+        sort_by = "shot_at"
       end
 
       if params[:order] == "desc"

@@ -11,6 +11,10 @@ module CarnationConfig
     return @logger
   end
 
+  def default_timezone
+    return 9 # JST
+  end
+
   def mysql_host
     @mysql_host ||= 'localhost'
   end

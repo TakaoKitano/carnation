@@ -307,22 +307,36 @@ $(document).ready(function() {
       </p>
       <fieldset>
         <div >
-          <label>user_id(mandatory)</label> <input type="text" name="user_id"/>
+          <label>user_id</label> <input type="text" name="user_id"/>
+          mandatory
         </div>
         <div >
-          <label>item_id(optional)</label> <input type="text" name="item_id"/>
+          <label>item_id</label> <input type="text" name="item_id"/>
+          optional - specify if you are re-initiate the item
         </div>
         <div >
-          <label>file_hash(optional)</label> <input type="text" size='60' name="file_hash"/>
+          <label>file_hash</label> <input type="text" size='60' name="file_hash"/>
+          optional - sha1sum hexdigital value of the item file
         </div>
         <div >
-          <label>file_info(optional)</label> <input type="text" name="file_info"/>
+          <label>file_info</label> <input type="text" name="file_info"/>
+          optional - text
         </div>
         <div >
-          <label>title(optional)</label> <input type="text" name="title"/>
+          <label>timezone</label> <input type="text" name="timezone"/>
+          optional - timezone int [-11...11] 
         </div>
         <div >
-          <label>description(optional)</label> <input type="text" name="description"/>
+          <label>shot_at</label> <input type="text" name="shot_at"/>
+          optional - utc epoch sec int
+        </div>
+        <div >
+          <label>title</label> <input type="text" name="title"/>
+          optional - title text of the item
+        </div>
+        <div >
+          <label>description</label> <input type="text" name="description"/>
+          optional - description test of the item
         </div>
         <div >
           <label>extension(mandatory)</label>
@@ -479,11 +493,19 @@ $(document).ready(function() {
         </div>
         <div >
           <label>created_after</label><input type="number" name="created_after" />
-          optional - unix epoch time e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+          optional - unix epoch time - item first created e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
         </div>
         <div >
           <label>created_before</label><input type="number" name="created_before" />
+          optional - unix epoch time - item first created  e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+        </div>
+        <div >
+          <label>shot_after</label><input type="number" name="shot_after" />
           optional - unix epoch time e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+        </div>
+        <div >
+          <label>shot_before</label><input type="number" name="shot_before" />
+          optional - unix epoch time - item first created  e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
         </div>
         <div >
           <label>updated_after</label><input type="number" name="updated_after" />
@@ -511,6 +533,7 @@ $(document).ready(function() {
           <select name="order_by">
             <option value=""></option> 
             <option value="created_at">created_at</option>
+            <option value="shot_at">shot_at</option>
             <option value="updated_at">updated_at</option>
           </select>
           <label>optional -  the column for specifying order default:created_at</label>
