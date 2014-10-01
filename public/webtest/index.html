@@ -481,7 +481,7 @@ $(document).ready(function() {
         </div>
         <div >
           <label>count</label><input type="number" name="count" />
-          optional - default:20, max:200
+          optional - default:50, max:1000
         </div>
         <div >
           <label>greater_than</label><input type="number" name="greater_than" />
@@ -563,7 +563,18 @@ $(document).ready(function() {
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
-          <label>optional -  default:false, if this parameter is true, only ids are returned </label>
+          <label>DEPRECATED use outout instead - default:false, if this parameter is true, only ids are returned </label>
+        </div>
+        <div >
+          <label>output</label>
+          <select name="output">
+            <option value=""></option>
+            <option value="full">full</option>
+            <option value="summary">summary</option>
+            <option value="minimum">minimum</option>
+            <option value="compact">compact</option>
+          </select>
+          <label>output format - default full</label>
         </div>
         <textarea id="parameters" readonly cols="80" rows="4" >method,url,parameters will be shown here</textarea><br/>
         <input  type="submit" value="submit">
