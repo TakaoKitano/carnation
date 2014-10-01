@@ -6,11 +6,15 @@ require 'models'
 def add_file_hash()
     Item.all.each do |item|
       if item.status == 1
-        p "#{item.id} activated - re-activate "
-        Item.create_derivatives(item.id)
+        if !item.file_hash
+          p "#{item.id} requires re-activate "
+          Item.create_derivatives(item.id)
+        else
+          p "#{item.id} skip"
+        end
       elsif item.status == 0
-        p "#{item.id} not activated - deleting"
-        item.destroy
+        #p "#{item.id} not activated - deleting"
+        #item.destroy
       elsif item.status == 2
         p "#{item.id} is deleted - deleting"
         item.destroy
