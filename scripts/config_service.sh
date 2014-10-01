@@ -5,6 +5,7 @@ docker images | grep chikaku
 echo configure systemd services for carnation
 sudo systemctl enable /home/core/carnation.service 
 sudo systemctl daemon-reload
+sudo systemctl stop carnation.service
 sudo systemctl start carnation.service
 #echo retrieving docker image google/cadvisor for memory trace - this may take long time
 #docker pull google/cadvisor >/dev/null
