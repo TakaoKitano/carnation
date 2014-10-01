@@ -10,8 +10,11 @@ def adhoc
     
     Item.all.each do |item|
       if not item.shot_at
+        p "setting #{item.id}:shot_at"
         item.shot_at = item.created_at
         item.save 
+      else
+        p "skip #{item.id}"
       end
     end
 end
