@@ -512,8 +512,8 @@ class Carnation < Sinatra::Base
         ds = ds.offset(offset)
       end
       count = params[:count].to_i
-      count = 20 if count == 0
-      count = 200 if count > 200
+      count = 50 if count == 0
+      count = 1000 if count > 1000
       ds = ds.limit(count)
 
       sort_by = "created_at"
@@ -530,14 +530,30 @@ class Carnation < Sinatra::Base
       end
     end
 
-    id_only = false
     if params[:no_details] == "true"
-      id_only = true
+      output = "minimum"
+    elsif params[:no_details] == "false"
+      output = "full"
+    else
+      if "compact" == params[:output] 
+        output = "compact"
+      elsif "summary" == params[:output] 
+        output = "summary"
+      elsif "minimum" == params[:output] 
+        output = "minimum"
+      else
+        output = "full"
+      end
     end
 
+    # TODO: optimise this loop
     items = []
     ds.all.each do |item|
-      if id_only 
+      if output == "compact"
+        items << item.id
+      elsif output == "summary"
+        items << {:id=>item.id,:status=>item.status, :file_hash=>item.file_hash}
+      elsif output == "minimum"
         items << {:id=>item.id}
       else
         items << item.to_result_hash
