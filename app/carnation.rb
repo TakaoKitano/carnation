@@ -189,6 +189,7 @@ class Carnation < Sinatra::Base
     @result[:name] = target.name
     @result[:role] = target.role
     @result[:status] = target.status
+    @result[:timezone] = target.timezone
     @result[:viewers] = target.viewers.map {|v| v.extended_hash}
     @result[:groups] = Group.where(:user_id=>target.id).all.map {|g| g.to_hash}
     @result[:belong_to_groups] = target.groups.map {|g| g.to_hash}
