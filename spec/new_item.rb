@@ -82,6 +82,16 @@ describe Carnation do
       expect(last_response).not_to be_ok
     end
 
+    it "should be OK even if file_hash conflicts with deleted item" do
+      post '/api/v1/item/initiate', {:user_id=>@user.id, :extension=>".jpg", :access_token=>@token, :file_hash=>"abc"}
+      expect(last_response).to be_ok
+      result = JSON.parse(last_response.body)
+      delete '/api/v1/item', {:item_id=>result['item_id'], :access_token=>@token}
+      expect(last_response).to be_ok
+      post '/api/v1/item/initiate', {:user_id=>@user.id, :extension=>".jpg", :access_token=>@token, :file_hash=>"abc"}
+      expect(last_response).to be_ok
+    end
+
   end
 
   after do

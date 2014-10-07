@@ -43,6 +43,13 @@ class Carnation < Sinatra::Base
       end
       return nil
     end
+
+    def file_hash_item_count(file_hash, user_id)
+        ds = Item.where('status = 1 OR status = 2')
+        ds = ds.where(:file_hash=>file_hash)
+        ds = ds.where("id != #{user_id}")
+        return ds.count
+    end
   end
 
   use Rack::OAuth2::Server::Resource::Bearer do |request|
@@ -229,7 +236,7 @@ class Carnation < Sinatra::Base
     file_hash = get_non_zero_length_parameter(:file_hash)
     @logger.info "file_hash=#{file_hash}"
     if file_hash
-        halt(400, "file_hash conflict") if Item.find(:file_hash=>file_hash)
+      halt(400, "file_hash conflict") if file_hash_item_count(file_hash, owner.id) > 0
     end
 
     if item_id > 0 
@@ -283,7 +290,7 @@ class Carnation < Sinatra::Base
     extension = get_non_zero_length_parameter(:extension) 
     file_hash = get_non_zero_length_parameter(:file_hash)
     if file_hash
-      halt(400, "file_hash conflict") if Item.find(:file_hash=>file_hash)
+      halt(400, "file_hash conflict") if file_hash_item_count(file_hash, owner.id) > 0
     end
 
     if item_id > 0 
@@ -420,20 +427,16 @@ class Carnation < Sinatra::Base
     valid_after = 0 if valid_after <= 0
 
     file_hash = get_non_zero_length_parameter(:file_hash)
-    begin
-      if file_hash
-        halt(400, "file_hash conflict") if Item.where(:file_hash=>file_hash).all.length > 1
-        #
-        # override the file_hash that was set on initiate
-        #
-        item.file_hash = file_hash
-        @logger.info "item.file_hash replaced with the new value"
-      end
-      item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
-      item.save()
-    rescue
-      halt(400, "file_hash conflict") if Item.where(:file_hash=>file_hash).all.length > 1
+    if file_hash
+      halt(400, "file_hash conflict") if file_hash_item_count(file_hash, item.user_id) > 0
+      #
+      # override the file_hash that was set on initiate
+      #
+      item.file_hash = file_hash
+      @logger.info "item.file_hash replaced with the new value"
     end
+    item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
+    item.save()
 
     @logger.info "item saved, registering a worker job for item:#{item.id}"
     require 'create_derivatives'
