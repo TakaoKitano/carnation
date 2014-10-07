@@ -45,7 +45,7 @@ class Carnation < Sinatra::Base
     end
 
     def file_hash_item_count(file_hash, user_id)
-        ds = Item.where('status = 1 OR status = 2')
+        ds = Item.where('status = 0 OR status = 1')
         ds = ds.where(:file_hash=>file_hash)
         ds = ds.where("id != #{user_id}")
         return ds.count
