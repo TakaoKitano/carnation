@@ -525,8 +525,8 @@ class Item < Sequel::Model(:items)
         timestr = original.get_exif_by_entry('DateTime')[0][1]
         epoch = Time.parse(timestr.sub(':', '/').sub(':', '/')).to_i
         CarnationConfig.logger.info "#{self.id}:epoch from exif = #{epoch}"
-        CarnationConfig.logger.info "#{self.id}:shot_at = epoch + #{diff}"
-        self.shot_at = epoch + diff
+        CarnationConfig.logger.info "#{self.id}:shot_at = epoch - #{diff}"
+        self.shot_at = epoch - diff
       rescue
         CarnationConfig.logger.info "#{self.id}:(not fatal)could not get exif DateTime"
         self.shot_at = self.created_at # last resort
