@@ -595,9 +595,9 @@ class Carnation < Sinatra::Base
     halt(400, "invalid user_id") unless user
 
     ds = Event.where(:user_id=>user_id)
-    item_id = params['item_id'].to_i
-    if item_id > 0
-      ds = ds.where(:item_id=>item_id)
+    event_id = params['event_id'].to_i
+    if event_id > 0
+      ds = ds.where(:id=>event_id)
     else
       greater_than = params["greater_than"].to_i
       ds = ds.where('id > ?', greater_than) if greater_than > 0
