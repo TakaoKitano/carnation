@@ -23,6 +23,7 @@ class User < Sequel::Model(:users)
   one_to_many :items
   one_to_many :viewers
   one_to_many :devices
+  one_to_many :events
   one_to_one :profile
   def initialize(values={})
     super
@@ -36,49 +37,13 @@ class User < Sequel::Model(:users)
     #
     # remove all items this user owns
     #
-    self.items.each do |item|
-      item.require_modification = false
-      item.destroy
-    end
-
-    #
-    # remove all viewers this user owns
-    #
-    self.viewers.each do |viewer|
-      viewer.require_modification = false
-      viewer.destroy
-    end
-
-    #
-    # remove associations of the group this user belongs to 
-    #
+    Item.where(:user_id=>self.id).destroy()
+    Viewer.where(:user_id=>self.id).destroy()
     self.remove_all_groups
-
-    #
-    # remove all groups this user owns
-    #
-    Group.where(:user_id=>self.id).each do |group|
-      group.require_modification = false
-      group.destroy
-    end
-
-    #
-    # remove all access tokens published for this user
-    #
-    accesstoken = AccessToken.find(:user_id=>self.id)
-    if accesstoken
-      accesstoken.require_modification = false
-      accesstoken.destroy
-    end
-
-    #
-    # destroy all devices
-    #
-    self.devices.each do |device|
-      device.require_modification = false
-      device.destroy
-    end
-
+    Group.where(:user_id=>self.id).destroy()
+    AccessToken.where(:user_id=>self.id).destroy()
+    Device.where(:user_id=>self.id).destroy()
+    Event.where(:user_id=>self.id).destroy()
     super
   end
   
@@ -208,6 +173,7 @@ class Device < Sequel::Model(:devices)
     data = { "where"=>{ "installationId"=>self.deviceid}, 
              "data" =>{ "alert"     => message,
                         "sound"     => "default",
+                        "badge"     => param[:badge],
                         "viewer_id" => param[:viewer_id],
                         "item_id"   => param[:item_id] } }
     request.body = data.to_json
@@ -265,49 +231,71 @@ class Viewer < Sequel::Model(:viewers)
   def before_destroy
     self.remove_all_items
     self.remove_all_groups
-    profiles.each do |profile|
-      profile.require_modification = false
-      profile.destroy
-    end
-    accesstoken = AccessToken.find(:viewer_id=>self.id)
-    if accesstoken
-      accesstoken.require_modification = false
-      accesstoken.destroy
-    end
+    Profile.where(:viewer_id=>self.id).destroy()
+    ViewerLike.where(:viewer_id=>self.id).destroy()
+    AccessToken.where(:viewer_id=>self.id).destroy()
     super
   end
 
   def after_destroy
     super
-    client = Client.find(:id=>self.client_id)
-    if client
-      client.require_modification = false
-      client.destroy
-    end
+    Client.where(:id=>self.client_id).destroy()
   end
 
   def do_like(item)
-    r = ViewerLikeItem.find_or_create(:viewer_id=>self.id, :item_id=>item.id)
-    return nil if not r
 
-    p r.to_hash
+    user = User.find(:id=>item.user_id)
+    return nil if not user
+    #
+    # create or find a event, then update
+    #
+    fPushRequired = false
+    event = Event.where(:user_id=>user.id, :event_type=>1, :viewer_id=>self.id).last
+    if not event or event.retrieved or event.updated_at < Time.now.to_i - 3600
+      event = Event.create(:user_id=>user.id, :event_type=>1, :viewer_id=>self.id).save()
+      fPushRequired = true
+      CarnationConfig.logger.info "new event created"
+      CarnationConfig.logger.info event.to_hash
+    else
+      CarnationConfig.logger.info "updating existing event"
+      CarnationConfig.logger.info event.to_hash
+    end
+    return nil if not event
+    r = ViewerLike.create(:event_id=>event.id, :viewer_id=>self.id, :item_id=>item.id)
+    CarnationConfig.logger.info "created ViewerLike record"
+    CarnationConfig.logger.info r.to_hash
+    event.updated_at = Time.new.to_i
+    event.save()
+
+    #
+    # old code to be removed eventually
+    #
+    #r = ViewerLikeItem.find_or_create(:viewer_id=>self.id, :item_id=>item.id)
+    #return nil if not r
+    #p r.to_hash
+    #r.count = 0 if not r.count
+    #r.count = r.count + 1
+    #r.save()
 
     #
     # push notification
     #
-    if not r.updated_at or r.updated_at < Time.new.to_i - 60 
-      user = User.find(:id=>item.user_id)
+    if fPushRequired
+      count = 0
+      user.events.reverse_each do |e|
+        if e.retrieved
+          break
+        end
+        count = count + 1
+      end
+      CarnationConfig.logger.info "events to be retrieved count=#{count}"
+
       user.devices.each do |d|
         CarnationConfig.logger.info "sending notification from viewer_id:#{self.id} for item_id:#{item.id} to device:#{d.deviceid}"
-        d.push_notification(:message=>"ご実家がお気に入りをつけました！", :viewer_id=>self.id, :item_id=>item.id)
+        d.push_notification(:badge=>count, :message=>"ご実家がお気に入りをつけました！", :viewer_id=>self.id, :item_id=>item.id)
       end 
-    else
-      p "push notification is suppressed for item_id:#{item.id}"
     end
-
-    r.count = 0 if not r.count
-    r.count = r.count + 1
-    r.save()
+    return r
   end
 
   def can_read_item_of(owner)
@@ -375,9 +363,26 @@ end
 
 class ViewerLikeItem < Sequel::Model(:viewer_like_items)
   unrestrict_primary_key
-
   def before_update
     self.updated_at = Time.now.to_i
+  end
+end
+
+class Event < Sequel::Model(:events)
+  def initialize(values={})
+    super
+    self.created_at = Time.now.to_i
+    self.updated_at = self.created_at
+  end
+  def before_destroy
+    ViewerLike.where(:event_id=>self.id).destroy()
+  end
+end
+
+class ViewerLike < Sequel::Model(:viewer_likes)
+  def initialize(values={})
+    super
+    self.created_at = Time.now.to_i
   end
 end
 
@@ -404,10 +409,8 @@ class Item < Sequel::Model(:items)
   end
 
   def before_destroy
-    self.derivatives.each do |derivative|
-      derivative.require_modification = false
-      derivative.destroy
-    end
+    Derivative.where(:item_id=>self.id).destroy()
+    ViewerLike.where(:item_id=>self.id).destroy()
     self.remove_all_viewers
     super
   end
@@ -415,8 +418,8 @@ class Item < Sequel::Model(:items)
   def to_result_hash
     result = self.to_hash
     result[:url] = self.presigned_url(:get)
-    result[:liked_by] = ViewerLikeItem.where(:item_id=>self.id).all.map do |r|
-      {:viewer_id=>r.viewer_id, :count=>r.count}
+    result[:liked_by] = ViewerLike.where(:item_id=>self.id).group_and_count(:viewer_id).all.map do |r|
+      {:viewer_id=>r[:viewer_id], :count=>r[:count]}
     end
     result[:derivatives] = self.derivatives.map do |d|
       h = d.to_hash
