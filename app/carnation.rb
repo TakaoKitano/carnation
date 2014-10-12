@@ -578,7 +578,7 @@ class Carnation < Sinatra::Base
     user = User.find(:id=>user_id) 
     halt(400, "invalid user_id") unless user
 
-    ds = Event.where('events.user_id = ?', user_id)
+    ds = Event.where(:user_id=>user_id)
     item_id = params['item_id'].to_i
     if item_id > 0
       ds = ds.where(:item_id=>item_id)
@@ -604,25 +604,18 @@ class Carnation < Sinatra::Base
       ds = ds.limit(count)
 
       if params[:order] == "desc"
-        ds = ds.order(Sequel.desc('events.id'))
+        ds = ds.order(Sequel.desc(:id))
       else
-        ds = ds.order(Sequel.asc('events.id'))
+        ds = ds.order(Sequel.asc(:id))
       end
     end
 
-    ds = ds.join(:viewers, "events.viewer_id = viewers.id")
     events = []
     ds.all do |r|
       h = r.to_hash
-      events << { :id=>h[:id], 
-                  :created_at=>h[:created_at],
-                  :updated_at=>h[:updated_at],
-                  :event_type=>h[:event_type],
-                  :viewer_id=>h[:viewer_id],
-                  :viewer_name=>h[:name],
-                  :read=>h[:read],
-                  :retrieved=>h[:retrieved]
-                }
+      #@logger.info "h = #{h}"
+      h[:viewer_name]= Viewer.find(:id=>r.viewer_id).name
+      events << h
     end
 
     count = 0
