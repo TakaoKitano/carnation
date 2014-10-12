@@ -473,8 +473,8 @@ class Carnation < Sinatra::Base
     end
 
     if not ignore_status
-      if params['status'].length > 0
-        status = params['status'].to_i
+      if params[:status] && params[:status].length > 0
+        status = params[:status].to_i
       else
         status = Item::STATUS[:active]
       end
@@ -626,23 +626,31 @@ class Carnation < Sinatra::Base
       end
     end
 
+    # TODO: someday optimise this loop
     events = []
     ds.all do |r|
       h = r.to_hash
       #@logger.info "h = #{h}"
       h[:viewer_name]= Viewer.find(:id=>r.viewer_id).name
+      ids = []
+      ViewerLike.where(:event_id=>r.id, :viewer_id=>r.viewer_id).group(:item_id).all.map do |like|
+        ids << like.item_id
+      end
+      h[:item_ids] = ids
+      h.delete(:user_id)
       events << h
     end
 
-    count = 0
-    max_retrieved_id = 0
-    ds.all.reverse_each do |e|
-      if e.retrieved
-        max_retrieved_id = e.id
-        break
-      end
-      count = count + 1
+    # 
+    # max_retrieved_id and count
+    #
+    event = Event.where(:user_id=>user_id, :retrieved=>true).last
+    if event
+      max_retrieved_id = event.id
+    else
+      max_retrieved_id = 0
     end
+    count = Event.where(:user_id=>user_id, :retrieved=>false).count
 
     @result[:user_id] = user.id
     @result[:new_count] = count
@@ -656,8 +664,8 @@ class Carnation < Sinatra::Base
     user = User.find(:id=>user_id) 
     halt(400, "invalid user_id") unless user
 
-    ids = params['event_id'].split(',').map{|s| s.to_i}
-    if params['event_id'].length > 0
+    if params['event_id'] && params['event_id'].length > 0
+      ids = params['event_id'].split(',').map{|s| s.to_i}
       Event.where(:user_id=>user_id, :id=>ids).update(:read=>true)
     else
       ids = "all"
@@ -673,8 +681,8 @@ class Carnation < Sinatra::Base
     user = User.find(:id=>user_id) 
     halt(400, "invalid user_id") unless user
 
-    ids = params['event_id'].split(',').map{|s| s.to_i}
-    if params['event_id'].length > 0
+    if params['event_id'] && params['event_id'].length > 0
+      ids = params['event_id'].split(',').map{|s| s.to_i}
       Event.where(:user_id=>user_id, :id=>ids).update(:read=>false)
     else
       ids = "all"
@@ -690,7 +698,7 @@ class Carnation < Sinatra::Base
     user = User.find(:id=>user_id) 
     halt(400, "invalid user_id") unless user
 
-    if params['event_id'].length > 0
+    if params['event_id'] && params['event_id'].length > 0
       event_id = params['event_id'].to_i
       Event.where(:user_id=>user_id).where('id <= ?', event_id).update(:retrieved=>true)
       Event.where(:user_id=>user_id).where('id > ?', event_id).update(:retrieved=>false)

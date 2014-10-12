@@ -52,21 +52,22 @@ describe Carnation do
 
   describe "post /api/v1/viewer/like increments counts" do
     it "should be OK with viewer token" do
-      get '/api/v1/user/items', {:user_id=>@user.id, :item_id=>1, :access_token=>@viewer_token}
+      get '/api/v1/user/items', {:user_id=>@user.id, :item_id=>4, :access_token=>@viewer_token}
       expect(last_response).to be_ok
       result = JSON.parse(last_response.body)
-      @@count = result['items'][0]['liked_by'][0]['count']
-    end
-    it "should be OK with viewer token" do
-      post '/api/v1/viewer/like', {:item_id=>1, :access_token=>@viewer_token}
+     
+      if result['items'][0]['liked_by'].length > 0
+        count = result['items'][0]['liked_by'][0]['count']
+      else
+        count = 0
+      end
+      post '/api/v1/viewer/like', {:item_id=>4, :access_token=>@viewer_token}
       expect(last_response).to be_ok
-    end
-    it "should be OK with viewer token" do
-      get '/api/v1/user/items', {:user_id=>@user.id, :item_id=>1, :access_token=>@viewer_token}
+      get '/api/v1/user/items', {:user_id=>@user.id, :item_id=>4, :access_token=>@viewer_token}
       expect(last_response).to be_ok
       result = JSON.parse(last_response.body)
-      count = result['items'][0]['liked_by'][0]['count']
-      expect(count).to eq @@count+1
+      count_after = result['items'][0]['liked_by'][0]['count']
+      expect(count_after).to eq count+1
     end
   end
 
@@ -81,6 +82,75 @@ describe Carnation do
     end
     it "should not be OK without user_id" do
       get '/api/v1/user/events', {:access_token=>@token}
+      expect(last_response).not_to be_ok
+    end
+  end
+
+  describe "post /api/v1/user/events/read" do
+    it "should be OK with user token" do
+      post '/api/v1/user/events/read', {:user_id=>@user.id, :access_token=>@token}
+      expect(last_response).to be_ok
+    end
+    it "should be OK with user token and event_id" do
+      post '/api/v1/user/events/read', {:user_id=>@user.id, :access_token=>@token, :event_id=>"4"}
+      expect(last_response).to be_ok
+    end
+    it "should be OK with user token and multiple event_id" do
+      post '/api/v1/user/events/read', {:user_id=>@user.id, :access_token=>@token, :event_id=>"4,5,6"}
+      expect(last_response).to be_ok
+    end
+    it "should not be OK without token" do
+      post '/api/v1/user/events/read', {:user_id=>@user.id}
+      expect(last_response).not_to be_ok
+    end
+    it "should not be OK without user_id" do
+      post '/api/v1/user/events/read', {:access_token=>@token}
+      expect(last_response).not_to be_ok
+    end
+  end
+
+  describe "post /api/v1/user/events/unread" do
+    it "should be OK with user token" do
+      post '/api/v1/user/events/unread', {:user_id=>@user.id, :access_token=>@token}
+      expect(last_response).to be_ok
+    end
+    it "should be OK with user token and event_id" do
+      post '/api/v1/user/events/unread', {:user_id=>@user.id, :access_token=>@token, :event_id=>"4"}
+      expect(last_response).to be_ok
+    end
+    it "should be OK with user token and event_id" do
+      post '/api/v1/user/events/unread', {:user_id=>@user.id, :access_token=>@token, :event_id=>"4,5,6"}
+      expect(last_response).to be_ok
+    end
+    it "should not be OK without token" do
+      post '/api/v1/user/events/unread', {:user_id=>@user.id}
+      expect(last_response).not_to be_ok
+    end
+    it "should not be OK without user_id" do
+      post '/api/v1/user/events/unread', {:access_token=>@token}
+      expect(last_response).not_to be_ok
+    end
+  end
+
+  describe "post /api/v1/user/events/retrieved" do
+    it "should be OK with user token" do
+      post '/api/v1/user/events/retrieved', {:user_id=>@user.id, :access_token=>@token}
+      expect(last_response).to be_ok
+    end
+    it "should be OK with user token and event_id" do
+      post '/api/v1/user/events/retrieved', {:user_id=>@user.id, :access_token=>@token, :event_id=>"4"}
+      expect(last_response).to be_ok
+    end
+    it "should be OK with user token and event_id=0" do
+      post '/api/v1/user/events/retrieved', {:user_id=>@user.id, :access_token=>@token, :event_id=>"0"}
+      expect(last_response).to be_ok
+    end
+    it "should not be OK without token" do
+      post '/api/v1/user/events/retrieved', {:user_id=>@user.id}
+      expect(last_response).not_to be_ok
+    end
+    it "should not be OK without user_id" do
+      post '/api/v1/user/events/unread', {:access_token=>@token}
       expect(last_response).not_to be_ok
     end
   end
