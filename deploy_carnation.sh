@@ -4,7 +4,7 @@
 #
 if [ $# -lt 2 ]
 then
-   echo "deploy {production|test|development} server_address"
+   echo "deploy {production|test} server_address"
    exit
 fi
 env_name=$1
@@ -17,9 +17,6 @@ then
 elif [[ $env_name = 'test' ]]
 then
   echo "config carnation server as test server"
-elif [[ $env_name = 'development' ]]
-then
-  echo "config carnation server as development server"
 else
   echo "unknown option"
   exit
