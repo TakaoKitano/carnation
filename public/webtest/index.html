@@ -584,6 +584,123 @@ $(document).ready(function() {
     </form>
 </div>
 
+<div data-collapse class="api">
+    <h4>GET /api/v1/user/events - get user events</h4>
+    <form class="carnation_api" action="/api/v1/user/events" method="GET">
+      <fieldset>
+        <div >
+          <label>user_id</label><input type="text" name="user_id"/>
+          mandatory
+        </div>
+        <div >
+          <label>item_id</label><input type="text" name="item_id" />
+          optional - if specified, all other filter parameters are ignored
+        </div>
+        <div >
+          <label>count</label><input type="number" name="count" />
+          optional - default:50, max:1000
+        </div>
+        <div >
+          <label>greater_than</label><input type="number" name="greater_than" />
+          optional - filter with id
+        </div>
+        <div >
+          <label>less_than</label><input type="number" name="less_than" />
+          optional - filter with id
+        </div>
+        <div >
+          <label>created_after</label><input type="number" name="created_after" />
+          optional - e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+        </div>
+        <div >
+          <label>created_before</label><input type="number" name="created_before" />
+          optional - e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+        </div>
+        <div >
+          <label>updated_after</label><input type="number" name="updated_after" />
+          optional - e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+        </div>
+        <div >
+          <label>updated_before</label><input type="number" name="updated_before" />
+          optional - e.g. 1406090189 (2014/7/23 13:36:29 GMT+9) default:null
+        </div>
+        <div >
+          <label>order</label>
+          <select name="order">
+            <option value=""></option> 
+            <option value="asc">asc</option>
+            <option value="desc">desc</option>
+          </select>
+          optional - sort with event_id parameter default:asc (older first)
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="4" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+        <input type="radio" name="tokentype" value="viewer">as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>POST /api/v1/user/events/read  - tell the server item(s) are read</h4>
+    <form class="carnation_api" action="/api/v1/user/events/read" method="POST">
+      <p>
+      </p>
+      <fieldset>
+        <div >
+          <label>user_id(mandatory)</label> <input type="text" name="user_id"/>
+        </div>
+        <div >
+          <label>event_id</label><input type="text" name="event_id"/>
+          comma separated event_ids, if this field is null, all the events are set read
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>POST /api/v1/user/events/unread  - tell the server item(s) are unread</h4>
+    <form class="carnation_api" action="/api/v1/user/events/unread" method="POST">
+      <p>
+      </p>
+      <fieldset>
+        <div >
+          <label>user_id(mandatory)</label> <input type="text" name="user_id"/>
+        </div>
+        <div >
+          <label>event_id</label><input type="text" name="event_id"/>
+          comma separated event_ids
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
+
+<div data-collapse class="api">
+    <h4>POST /api/v1/user/events/retrieved  - tell the server item(s) are retrieved</h4>
+    <form class="carnation_api" action="/api/v1/user/events/retrieved" method="POST">
+      <p>
+      </p>
+      <fieldset>
+        <div >
+          <label>user_id(mandatory)</label> <input type="text" name="user_id"/>
+        </div>
+        <div >
+          <label>event_id</label><input type="text" name="event_id"/>
+          event_id
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user" checked>as user</input>
+      </fieldset>
+    </form>
+</div>
+
 <h3>device</h3>
 
 <div data-collapse class="api">

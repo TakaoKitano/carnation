@@ -570,6 +570,131 @@ class Carnation < Sinatra::Base
     JSON.generate(@result)
   end
 
+  #
+  # get user events
+  #
+  get '/api/v1/user/events' do
+    user_id = check_user_id_parameter
+    user = User.find(:id=>user_id) 
+    halt(400, "invalid user_id") unless user
+
+    ds = Event.where('events.user_id = ?', user_id)
+    item_id = params['item_id'].to_i
+    if item_id > 0
+      ds = ds.where(:item_id=>item_id)
+    else
+      greater_than = params["greater_than"].to_i
+      ds = ds.where('id > ?', greater_than) if greater_than > 0
+      less_than = params["less_than"].to_i
+      ds = ds.where('id < ?', less_than) if less_than > 0
+
+      created_before = params["created_before"].to_i
+      ds = ds.where('created_at < ?', created_before) if created_before > 0
+      created_after = params["created_after"].to_i
+      ds = ds.where('created_at > ?', created_after) if created_after > 0
+
+      updated_before = params["updated_before"].to_i
+      ds = ds.where('updated_at < ?', updated_before) if updated_before > 0
+      updated_after = params["updated_after"].to_i
+      ds = ds.where('updated_at > ?', updated_after) if updated_after > 0
+
+      count = params[:count].to_i
+      count = 50 if count == 0
+      count = 1000 if count > 1000
+      ds = ds.limit(count)
+
+      if params[:order] == "desc"
+        ds = ds.order(Sequel.desc('events.id'))
+      else
+        ds = ds.order(Sequel.asc('events.id'))
+      end
+    end
+
+    ds = ds.join(:viewers, "events.viewer_id = viewers.id")
+    events = []
+    ds.all do |r|
+      h = r.to_hash
+      events << { :id=>h[:id], 
+                  :created_at=>h[:created_at],
+                  :updated_at=>h[:updated_at],
+                  :event_type=>h[:event_type],
+                  :viewer_id=>h[:viewer_id],
+                  :viewer_name=>h[:name],
+                  :read=>h[:read],
+                  :retrieved=>h[:retrieved]
+                }
+    end
+
+    count = 0
+    max_retrieved_id = 0
+    ds.all.reverse_each do |e|
+      if e.retrieved
+        max_retrieved_id = e.id
+        break
+      end
+      count = count + 1
+    end
+
+    @result[:user_id] = user.id
+    @result[:new_count] = count
+    @result[:max_retrieved_id] = max_retrieved_id
+    @result[:events] = events
+    JSON.generate(@result)
+  end
+
+  post '/api/v1/user/events/read' do
+    user_id = check_user_id_parameter
+    user = User.find(:id=>user_id) 
+    halt(400, "invalid user_id") unless user
+
+    ids = params['event_id'].split(',').map{|s| s.to_i}
+    if params['event_id'].length > 0
+      Event.where(:user_id=>user_id, :id=>ids).update(:read=>true)
+    else
+      ids = "all"
+      Event.where(:user_id=>user_id).update(:read=>true)
+    end
+    @result[:user_id] = user_id
+    @result[:events] = ids
+    JSON.generate(@result)
+  end
+
+  post '/api/v1/user/events/unread' do
+    user_id = check_user_id_parameter
+    user = User.find(:id=>user_id) 
+    halt(400, "invalid user_id") unless user
+
+    ids = params['event_id'].split(',').map{|s| s.to_i}
+    if params['event_id'].length > 0
+      Event.where(:user_id=>user_id, :id=>ids).update(:read=>false)
+    else
+      ids = "all"
+      Event.where(:user_id=>user_id).update(:read=>false)
+    end
+    @result[:user_id] = user_id
+    @result[:event] = ids
+    JSON.generate(@result)
+  end
+
+  post '/api/v1/user/events/retrieved' do
+    user_id = check_user_id_parameter
+    user = User.find(:id=>user_id) 
+    halt(400, "invalid user_id") unless user
+
+    if params['event_id'].length > 0
+      event_id = params['event_id'].to_i
+      Event.where(:user_id=>user_id).where('id <= ?', event_id).update(:retrieved=>true)
+      Event.where(:user_id=>user_id).where('id > ?', event_id).update(:retrieved=>false)
+    else
+      event_id = "all"
+      Event.where(:user_id=>user_id).update(:retrieved=>true)
+    end
+
+    @result[:user_id] = user_id
+    @result[:event_id] = event_id
+    JSON.generate(@result)
+  end
+
   get '/api/v1/viewer/users' do
     viewer = Viewer.find(:id=>@token.viewer_id) if @token.viewer_id
     halt(400, "invalid token") unless viewer
@@ -599,8 +724,8 @@ class Carnation < Sinatra::Base
 
     @result[:viewer_id] = viewer.id
     @result[:item_id] = item.id
-    @result[:count] = r.count
-    @result[:updated_at] = r.updated_at
+    @result[:count] = ViewerLike.where(:viewer_id=>viewer.id, :item_id=>item.id).count
+    @result[:updated_at] = r.created_at
     JSON.generate(@result)
   end
 
