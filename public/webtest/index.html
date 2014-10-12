@@ -545,7 +545,17 @@ $(document).ready(function() {
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
-          <label>optional -  default:false, always false if called by viewer</label>
+          <label>DEPRECATED use status instead - default:false </label>
+        </div>
+        <div >
+          <label>status</label>
+          <select name="status">
+            <option value=""></option>
+            <option value="0">0(initiated)</option>
+            <option value="1">1(active)</option>
+            <option value="2">2(deleted)</option>
+          </select>
+          <label>default:1</label>
         </div>
         <div >
           <label>ignore_valid_after</label>

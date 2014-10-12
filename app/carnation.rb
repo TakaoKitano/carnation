@@ -385,7 +385,7 @@ class Carnation < Sinatra::Base
     halt(400, "item not found") unless item 
     halt(400, "access denied") unless user.can_read item
 
-    @result = item.to_result_hash
+    @result = item.to_result_hash(:suppress_urls_if_deleted=>false)
     JSON.generate(@result)
   end
 
@@ -466,13 +466,25 @@ class Carnation < Sinatra::Base
 
     ds = Item.where(:user_id => owner.id)
 
-    ignore_status = (params[:ignore_status] == "true")
+    if user
+      ignore_status = (params[:ignore_status] == "true")
+    else
+      ignore_status = false
+    end
+
+    if not ignore_status
+      if params['status'].length > 0
+        status = params['status'].to_i
+      else
+        status = Item::STATUS[:active]
+      end
+      ds = ds.where('status = ?', status) 
+    end
+
     ignore_valid_after = (params[:ignore_valid_after] == "true")
     if viewer
-      ignore_status = false
       ignore_valid_after = false
     end
-    ds = ds.where('status = ?', Item::STATUS[:active]) unless ignore_status
     ds = ds.where('valid_after < ?', Time.now.to_i) unless ignore_valid_after
 
     item_id = params[:item_id].to_i
@@ -560,7 +572,11 @@ class Carnation < Sinatra::Base
       elsif output == "minimum"
         items << {:id=>item.id}
       else
-        items << item.to_result_hash
+        if user
+          items << item.to_result_hash(:suppress_urls_if_deleted=>false)
+        else
+          items << item.to_result_hash(:suppress_urls_if_deleted=>true)
+        end
       end
     end
 
