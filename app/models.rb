@@ -415,15 +415,23 @@ class Item < Sequel::Model(:items)
     super
   end
 
-  def to_result_hash
+  def to_result_hash(options={})
     result = self.to_hash
-    result[:url] = self.presigned_url(:get)
+    if options[:suppress_urls_if_deleted] and self.status == STATUS[:deleted]
+      result[:url] = nil
+    else
+      result[:url] = self.presigned_url(:get)
+    end
     result[:liked_by] = ViewerLike.where(:item_id=>self.id).group_and_count(:viewer_id).all.map do |r|
       {:viewer_id=>r[:viewer_id], :count=>r[:count]}
     end
     result[:derivatives] = self.derivatives.map do |d|
       h = d.to_hash
-      h[:url] = d.presigned_url(:get)
+      if options[:suppress_urls_if_deleted] and self.status == STATUS[:deleted]
+        h[:url] = nil
+      else
+        h[:url] = d.presigned_url(:get)
+      end
       h
     end
     result
