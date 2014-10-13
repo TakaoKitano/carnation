@@ -281,13 +281,7 @@ class Viewer < Sequel::Model(:viewers)
     # push notification
     #
     if fPushRequired
-      count = 0
-      user.events.reverse_each do |e|
-        if e.retrieved
-          break
-        end
-        count = count + 1
-      end
+      count = Event.where(:user_id=>user.id, :retrieved=>false).count
       CarnationConfig.logger.info "events to be retrieved count=#{count}"
 
       user.devices.each do |d|
