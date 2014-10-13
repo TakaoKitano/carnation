@@ -632,12 +632,8 @@ class Carnation < Sinatra::Base
       h = r.to_hash
       #@logger.info "h = #{h}"
       h[:viewer_name]= Viewer.find(:id=>r.viewer_id).name
-      ids = []
-      ViewerLike.where(:event_id=>r.id, :viewer_id=>r.viewer_id).group(:item_id).all.map do |like|
-        ids << like.item_id
-      end
-      h[:item_ids] = ids
-      h.delete(:user_id)
+      h[:item_ids] = ViewerLike.where(:event_id=>r.id, :viewer_id=>r.viewer_id).group(:item_id).all.map {|c| c.item_id}
+      h.delete(:user_id) # hide from the output json
       events << h
     end
 
