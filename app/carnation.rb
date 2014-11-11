@@ -303,6 +303,7 @@ class Carnation < Sinatra::Base
         if file_hash
           item.file_hash = file_hash
         end
+        item.timezone = owner.timezone
         item.save()
       rescue
         halt(400, "file_hash conflict") 
