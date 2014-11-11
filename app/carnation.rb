@@ -367,6 +367,7 @@ class Carnation < Sinatra::Base
       item.destroy
     else
       item.status = Item::STATUS[:deleted]
+      item.updated_at = Time.now.to_i
       item.save()
     end
     @result[:id] = item.id
@@ -405,6 +406,7 @@ class Carnation < Sinatra::Base
 
     if item.status == Item::STATUS[:deleted] 
       item.status = Item::STATUS[:active]
+      item.updated_at = Time.now.to_i
       item.save()
     end
     @result[:id] = item.id

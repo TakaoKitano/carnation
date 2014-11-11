@@ -392,9 +392,9 @@ class Item < Sequel::Model(:items)
     self.valid_after = Time.now.to_i + 3600 * 24
   end
 
-  def before_update
-    self.updated_at = Time.now.to_i
-  end
+  #def before_update
+  #  self.updated_at = Time.now.to_i
+  #end
 
   def after_create
     super
@@ -549,7 +549,10 @@ class Item < Sequel::Model(:items)
       self.duration = 0
       self.filesize = File.size(filepath)
       self.mime_type = mime_type
-      self.status = Item::STATUS[:active] if result
+      if result
+        self.status = Item::STATUS[:active]
+        self.updated_at = Time.now.to_i
+      end
       self.save()
     rescue
       CarnationConfig.logger.info "#{self.id}:item save error, file_hash conflict"
@@ -587,9 +590,12 @@ class Item < Sequel::Model(:items)
           self.duration = movie.duration
           self.filesize = movie.size
           self.mime_type = mime_type
-          self.status = Item::STATUS[:active] if result
+          if result
+            self.status = Item::STATUS[:active] 
+          end
           if not self.shot_at
             self.shot_at = self.created_at
+            self.updated_at = Time.now.to_i
           end
           self.save()
         rescue
