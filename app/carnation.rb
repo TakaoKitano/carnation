@@ -59,7 +59,7 @@ class Carnation < Sinatra::Base
     #p "expires_at=" + token.expires_at.to_i.to_s
     #p "       now=" + DateTime.now.to_i.to_s
     if token.expires_at.to_i < DateTime.now.to_i
-      @logger.info "token expired"
+      CarnationConfig.logger.info "token expired"
       request.invalid_token!
     end
     token
