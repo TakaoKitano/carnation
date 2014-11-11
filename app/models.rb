@@ -518,7 +518,23 @@ class Item < Sequel::Model(:items)
 
   def create_image_derivatives(filepath, mime_type)
     CarnationConfig.logger.info "#{self.id}:creating image derivatives"
-    original = Magick::Image.read(filepath).first.auto_orient
+    original = Magick::Image.read(filepath).first
+
+    orientation = original.get_exif_by_entry('Orientation')[0][1].to_i
+    if orientation == 1
+      rotation = 0
+    elsif orientation == 3
+      rotation = 180
+    elsif orientation == 6
+      rotation = 90
+    elsif orientation == 8
+      rotation = 270
+    else
+      rotation = 0
+    end
+    CarnationConfig.logger.info "#{self.id}:rotation=#{rotation}"
+    
+    original = original.auto_orient
     return false unless original
 
     #
@@ -549,6 +565,7 @@ class Item < Sequel::Model(:items)
       self.duration = 0
       self.filesize = File.size(filepath)
       self.mime_type = mime_type
+      self.rotation = rotation
       if result
         self.status = Item::STATUS[:active]
         self.updated_at = Time.now.to_i
@@ -590,6 +607,7 @@ class Item < Sequel::Model(:items)
           self.duration = movie.duration
           self.filesize = movie.size
           self.mime_type = mime_type
+          self.rotation = rotation
           if result
             self.status = Item::STATUS[:active] 
           end
