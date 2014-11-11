@@ -29,7 +29,12 @@ module CarnationConfig
   end
   def sequel_init
     @db = Sequel.connect("mysql2://carnation:#{mysql_password}@#{mysql_host}/carnationdb")
+    @db.extension(:connection_validator)
     Sequel.default_timezone = :utc
+    logger.info "sequel connected to #{mysql_host} with connection_validator"
+  end
+  def db
+    return @db
   end
 
   def redis_host
