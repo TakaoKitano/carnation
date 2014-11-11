@@ -588,10 +588,17 @@ class Item < Sequel::Model(:items)
           self.filesize = movie.size
           self.mime_type = mime_type
           self.status = Item::STATUS[:active] if result
+          if not self.shot_at
+            self.shot_at = self.created_at
+          end
           self.save()
         rescue
           CarnationConfig.logger.info "#{self.id}:item save error, file_hash conflict"
+          result = false
         end
+      else
+        CarnationConfig.logger.info "#{self.id}:item failed to read the screenshot image"
+        result = false
       end
 
     rescue
