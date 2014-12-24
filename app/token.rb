@@ -67,6 +67,7 @@ class Token < Sinatra::Base
           #p "user password unmatch"
           req.invalid_grant!
         end
+
       when :client_credentials 
         #p "client_credentials token request, id and secret is OK"
         #p "client.appid=" + client.appid
@@ -79,6 +80,23 @@ class Token < Sinatra::Base
           #p "viewer not found"
           req.invalid_grant!
         end
+
+      when :refresh_token 
+        #p "refresh_token request"
+        if req.refresh_token
+          #p "refresh_token=#{req.refresh_token}"
+          access_token = AccessToken.find(:refresh_token=>req.refresh_token) || req.invalid_grant!
+          if access_token
+            access_token = access_token.refresh
+            res.access_token = access_token.generate_bearer_token
+          else
+            req.invalid_grant!
+          end
+        else
+          #p "refresh_token is not provided"
+          req.invalid_grant!
+        end
+
       else
         req.unsupported_grant_type!
       end

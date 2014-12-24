@@ -54,6 +54,7 @@ describe "/token" do
       expect(last_response).to be_ok
       result = JSON.parse(last_response.body)
       expect(result["access_token"]).not_to eq(nil)
+      expect(result["refresh_token"]).not_to eq(nil)
       expect(result["token_type"]).to eq("bearer")
       expect(result["user_id"]).to eq(1)
       expect(result["expires_in"]).to be > 0
@@ -65,6 +66,7 @@ describe "/token" do
       result = JSON.parse(last_response.body)
       expect(last_response).to be_ok
       expect(result["access_token"]).not_to eq(nil)
+      expect(result["refresh_token"]).not_to eq(nil)
       expect(result["token_type"]).to eq("bearer")
       expect(result["user_id"]).to eq(2)
       expect(result["expires_in"]).to be > 0
@@ -76,6 +78,31 @@ describe "/token" do
       expect(last_response).to be_ok
       result = JSON.parse(last_response.body)
       expect(result["access_token"]).not_to eq(nil)
+      expect(result["refresh_token"]).not_to eq(nil)
+      expect(result["token_type"]).to eq("bearer")
+      expect(result["user_id"]).to eq(3)
+      expect(result["expires_in"]).to be > 0
+    end
+
+    it "should be OK with refresh token" do
+      authorize @appid, @secret
+      post '/token', "grant_type=password&username=default@chikaku.com&password=6y6bSoTwmKIO"
+      expect(last_response).to be_ok
+      p last_response.body
+      result = JSON.parse(last_response.body)
+      expect(result["access_token"]).not_to eq(nil)
+      expect(result["refresh_token"]).not_to eq(nil)
+      expect(result["token_type"]).to eq("bearer")
+      expect(result["user_id"]).to eq(3)
+      expect(result["expires_in"]).to be > 0
+
+      refresh_token = result["refresh_token"]
+      authorize @appid, @secret
+      post '/token', "grant_type=refresh_token&refresh_token=#{refresh_token}"
+      expect(last_response).to be_ok
+      p last_response.body
+      expect(result["access_token"]).not_to eq(nil)
+      expect(result["refresh_token"]).not_to eq(nil)
       expect(result["token_type"]).to eq("bearer")
       expect(result["user_id"]).to eq(3)
       expect(result["expires_in"]).to be > 0
