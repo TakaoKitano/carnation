@@ -16,11 +16,37 @@
     reset_viewer_token();
   }
 
+  var do_update_user_token = function(form, token) {
+      carnation.user_token = token.access_token;
+      $(form).find("#user_id").text(token.user_id)
+      $(form).find("#token").text(token.access_token)
+      $(form).find("#refresh_token").text(token.refresh_token)
+      $(form).find("#token_type").text(token.token_type)
+      $(form).find("#scope").text(token.scope)
+      $(form).find("#valid_until").text(new Date(parseInt(token.valid_until)))
+      $('*[name="user_id"]').val(token.user_id);
+      $('#user_access_token').val(token.access_token);
+  }
+
+  var do_refresh_token = function() {
+    var form = $('#get_user_token');
+    var refresh_token = $(form).find("#refresh_token").text();
+    var appid = $(form).find("#user_appid")[0].value;
+    var secret = $(form).find("#user_secret")[0].value;
+    console.log("appid=" + appid);
+    console.log("secret=" + secret);
+    var auth = Base64.encode(appid + ":" + secret);
+    carnation.refresh_user_token("Basic " + auth, refresh_token, function(token) {
+      do_update_user_token(form, token);
+    });
+  }
+
   var reset_user_token = function() {
     console.log( "reset user token" );
     carnation.reset_user_token();
     $("#get_user_token").find("#user_id").text('');
     $("#get_user_token").find("#token").text('');
+    $("#get_user_token").find("#refresh_token").text('');
     $("#get_user_token").find("#token_type").text('');
     $("#get_user_token").find("#scope").text('');
     $("#get_user_token").find("#valid_until").text('');
@@ -39,15 +65,14 @@
   var get_user_token = function(form) {
     var email = $(form).find('*[name=email]')[0].value;
     var password = $(form).find('*[name=password]')[0].value;
-    carnation.get_user_token(email, password, function(token) {
-      carnation.user_token = token.access_token;
-      $(form).find("#user_id").text(token.user_id)
-      $(form).find("#token").text(token.access_token)
-      $(form).find("#token_type").text(token.token_type)
-      $(form).find("#scope").text(token.scope)
-      $(form).find("#valid_until").text(new Date(parseInt(token.valid_until)))
-      $('*[name="user_id"]').val(token.user_id);
-      $('#user_access_token').val(token.access_token);
+    var form = $('#get_user_token');
+    var appid = $(form).find("#user_appid")[0].value;
+    var secret = $(form).find("#user_secret")[0].value;
+    console.log("appid=" + appid);
+    console.log("secret=" + secret);
+    var auth = Base64.encode(appid + ":" + secret);
+    carnation.get_user_token("Basic " + auth, email, password, function(token) {
+      do_update_user_token(form, token);
     });
   }
 
@@ -98,6 +123,9 @@
     {
       $("#appid").val("6052d5885f9c2a12c09ef90f815225d3");
       $("#secret").val("f6af879a7db8bfbe183e08c1a68e9035");
+
+      $("#user_appid").val("e3a5cde0f20a94559691364eb5fb8bff");
+      $("#user_secret").val("116dd4b3a92a17453df0a5ae83e5e640");
     }
   }
 
@@ -155,6 +183,14 @@ $(document).ready(function() {
     <form id="get_user_token" action="/token" method="POST">
       <fieldset>
         <div>
+          <label for="appid">appid</label>
+          <input id="user_appid" type="text" name="appid" size="40"/>
+        </div>
+        <div>
+          <label for="secret">secret</label>
+          <input id="user_secret" type="text" name="secret" size="40"/>
+        </div>
+        <div>
             <label for="email">email</label>
             <input id="email" type="text" name="email">
         </div>
@@ -165,11 +201,14 @@ $(document).ready(function() {
         <ul>
           <li>user_id=<span id="user_id"></span></li>
           <li>token=<span id="token"></span></li>
+          <li>refresh_token=<span id="refresh_token"></span></li>
           <li>scope=<span id="scope"></span></li>
           <li>token_type=<span id="token_type"></span></li>
           <li>valid until: <span id="valid_until"></span></li>
         </ul>
-        <input  type="submit" value="retrieve user token"/>
+        <input  type="button" value="clear token" onclick="reset_user_token()">
+        <input  type="submit" value="retrieve token"/>
+        <input  type="button" value="refresh token" onclick="do_refresh_token()">
       </fieldset>
     </form>
 </div>
@@ -193,13 +232,14 @@ $(document).ready(function() {
           <li>token_type= <span id="token_type"></span></li>
           <li>valid until: <span id="valid_until"></span></li>
         </ul>
+        <input  type="button" value="clear token" onclick="reset_viewer_token()">
         <input  type="submit" value="retrieve viewer token">
       </fieldset>
     </form>
 </div>
 
     <form action="result.html" method="GET" target="result">
-      <input  type="button" value="clear token" onclick="reset_tokens()">
+      <!-- <input  type="button" value="clear token" onclick="reset_tokens()">-->
       <input  type="button" value="save credentials" onclick="save_credentials()">
       <input  type="button" value="restore credentials" onclick="restore_credentials()">
       <input  type="submit" value="open result window"/>
