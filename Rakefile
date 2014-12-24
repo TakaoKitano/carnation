@@ -78,6 +78,18 @@ namespace :server do
   end
 end
 
+namespace :packer do
+  desc 'create test deploy server image'
+  task :test_image do
+    sh 'packer build packer_create_test_deploy.json'
+  end
+
+  desc 'create production deploy server image'
+  task :production_image do
+    sh 'packer build packer_create_production_deploy.json'
+  end
+end
+
 Rake::PackageTask.new("magoch_server", :noversion) do |t|
   t.package_dir = "build"
   t.package_files.include("**/*")

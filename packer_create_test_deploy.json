@@ -1,0 +1,41 @@
+{
+  "builders": [{
+    "type": "amazon-ebs",
+    "region": "ap-northeast-1",
+    "source_ami": "ami-decfc0df",
+    "instance_type": "t2.medium",
+    "ssh_username": "core",
+    "ami_name": "carnation test deploy {{timestamp}}",
+    "ami_block_device_mappings": [{ 
+        "volume_size": 24, 
+        "device_name": "/dev/xvda", 
+        "delete_on_termination":false 
+    }],
+    "security_group_id":"sg-b557b6d0",
+    "ssh_timeout":"5m",
+    "subnet_id":"subnet-7ce0ef08"
+  }],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "scripts/",
+      "destination": "/home/core"
+    },
+    {
+      "type": "file",
+      "source": "conf",
+      "destination": "/home/core"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "docker pull chikaku/carnation",
+        "cp /home/core/test.env /home/core/carnation.env",
+        "sudo systemctl enable /home/core/carnation.service",
+        "sudo systemctl daemon-reload",
+        "sudo systemctl stop carnation.service",
+        "sudo systemctl start carnation.service"
+      ]
+    }
+  ]
+}
