@@ -766,6 +766,7 @@ class AccessToken < Sequel::Model(:accesstokens)
       self.viewer_id = viewer_or_user.id
       self.scope = "read like"
     elsif viewer_or_user.instance_of? User
+      self.refresh_token = SecureRandom.hex 
       self.user_id = viewer_or_user.id
       self.scope = "read create delete"
     end
@@ -774,9 +775,16 @@ class AccessToken < Sequel::Model(:accesstokens)
     self.expires_at = now + 1 * (3600 * 24)  # 1 days for now
   end
 
+  def refresh
+    user = User.find(:id=>self.user_id)
+    self.destroy
+    access_token = AccessToken.new(user).save
+  end
+
   def generate_bearer_token
     bearer_token = Rack::OAuth2::AccessToken::Bearer.new(
       :access_token => self.token,
+      :refresh_token => self.refresh_token,
       :user_id => self.user_id,
       :viewer_id => self.viewer_id,
       :scope => self.scope,
