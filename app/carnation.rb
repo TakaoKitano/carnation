@@ -50,6 +50,18 @@ class Carnation < Sinatra::Base
         ds = ds.where("id != #{user_id}")
         return ds.count
     end
+
+    def s3_url(path, method_symbol)
+      begin
+        s3obj = CarnationConfig.s3bucket.objects[path]
+        ps = AWS::S3::PresignV4.new(s3obj)
+        url = ps.presign(method_symbol, :expires=>Time.now.to_i+28800,:secure=>true, :signature_version=>:v4)
+      rescue
+        CarnationConfig.logger.info "error when generating presigned_url"
+        url = nil
+      end
+      return url
+    end
   end
 
   use Rack::OAuth2::Server::Resource::Bearer do |request|
@@ -852,6 +864,37 @@ class Carnation < Sinatra::Base
     @result[:user_id] = user_id
     @result[:deviceid] = device.deviceid
     @result[:message] = message
+    JSON.generate(@result)
+  end
+
+  #
+  # retrieve a file upload url
+  #
+  get '/api/v1/uploadurl' do
+    if @token.user_id
+      user = User.find(:id=>@token.user_id)
+      halt(400, "user_id invalid") unless user
+      user_or_viewer = "user"
+      id = user.id
+    elsif  @token.viewer_id
+      viewer = Viewer.find(:id=>@token.viewer_id) if @token.viewer_id
+      halt(400, "viewer_id invalid") unless viewer
+      user_or_viewer = "viewer"
+      id = viewer.id
+    end
+
+    now = DateTime.now
+    filename = now.strftime("%Y_%m_%d_%H_%M_%S.log")
+    path = sprintf("log/#{user_or_viewer}/%08d/#{filename}", id)
+    @logger.info "path=#{path}"
+
+    url = s3_url(path, :put)
+    if not url
+      halt(500, "s3 error")
+    end
+
+    @result[:path] = path
+    @result[:url] = s3_url(path, :put)
     JSON.generate(@result)
   end
 
