@@ -73,6 +73,12 @@ edit /etc/nginx/nginx.conf and remove the "daemon off" line (as this is for dock
 sudo service nginx restart
 </pre>
 
+### Packer 
+
+- download appropriate binary package from https://www.packer.io/downloads.html
+- extract the package
+- set PATH to the extracted packer binaries
+
 ### setup db (needed only if you setup a new database)
 
 <pre>
@@ -139,10 +145,14 @@ rake docker:push
 - select 'magoaws'  key pair
 - open AWS EC2 instance tab and wait for it is launched
 - note the public ip address of the instance just launched
-
-## copy scripts to a server
-
 - run carnation_deploy.sh {test|production} server_address
+
+or
+
+- rake packer:production_image
+- rake packer:test_iamge
+- launch the EC2 instance using the AMI image built by packer (you still need to specify the correct security group and ssh key pair)
+
 
 ## add to the load balancer
 
