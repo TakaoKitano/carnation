@@ -1,4 +1,3 @@
-require 'rake/packagetask'
 namespace :db do
   desc 'create mysql account and database'
   task :sqlinit do
@@ -44,11 +43,6 @@ namespace :db do
   end
 end
 
-desc 'start test server'
-task :rackup do
-  sh 'bundle exec rackup'
-end
-
 desc "Run all specs in spec directory"
 task :tests do
   sh 'bundle exec rspec -c spec/*'
@@ -88,13 +82,6 @@ namespace :packer do
   task :production_image do
     sh 'packer build packer_create_production_deploy.json'
   end
-end
-
-Rake::PackageTask.new("magoch_server", :noversion) do |t|
-  t.package_dir = "build"
-  t.package_files.include("**/*")
-  t.package_files.exclude("README.md", "conf/**/*", "scripts/**/*", "spec/**/*", "doc/**/*", "log/**/*", "db/**/*", "migrate/**/*",  "vendor/**/*", "build/**/*")
-  t.need_tar = true
 end
 
 namespace :docker do
