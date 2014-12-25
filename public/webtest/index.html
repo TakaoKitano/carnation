@@ -898,5 +898,26 @@ $(document).ready(function() {
     </form>
 </div>
 
+<hr/><h3>file upload url</h3>
+
+<div data-collapse class="api">
+    <h4>GET /api/v1/uploadurl -  get upload url for HTTP put method</h4>
+    <form class="carnation_api" action="/api/v1/uploadurl" method="GET">
+      <fieldset>
+        <div >
+          <label>server_type</label><input type="number" name="server_type" value="1"/>
+          mandatory - 1:Amazon S3 (or other values for future)
+          <br/>
+          <label>file_type</label><input type="number" name="file_type" value="1"/>
+          mandatory - 1:CSV log file (or other values for future)
+        </div>
+        <textarea id="parameters" readonly cols="80" rows="3" >method,url,parameters will be shown here</textarea><br/>
+        <input  type="submit" value="submit">
+        <input type="radio" name="tokentype" value="user">as user</input>
+        <input type="radio" name="tokentype" value="viewer" checked>as viewer</input>
+      </fieldset>
+    </form>
+</div>
+
 </body>
 </html>
