@@ -7,29 +7,41 @@ namespace :db do
   desc 'dump mysql data'
   task :backup do
     dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbpasswd = ENV['CARNATION_MYSQL_PASSWORD']
     dbhost = 'localhost' unless dbhost
-    sh "mysqldump -ucarnation -paFx4mMHb3z7d6dy carnationdb  -h #{dbhost} --no-create-info >sqldump.sql"
+    sh "mysqldump -ucarnation -p#{dbpasswd} carnationdb  -h #{dbhost} --no-create-info >sqldump.sql"
   end
 
   desc 'restore dumped data'
   task :restore do
     dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbpasswd = ENV['CARNATION_MYSQL_PASSWORD']
     dbhost = 'localhost' unless dbhost
-    sh "mysql -ucarnation -paFx4mMHb3z7d6dy carnationdb  -h #{dbhost} <sqldump.sql"
+    sh "mysql -ucarnation -p#{dbpasswd} carnationdb  -h #{dbhost} <sqldump.sql"
   end
 
   desc 'drop mysql tables - this blows up all the data, be careful'
   task :drop do
     dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbpasswd = ENV['CARNATION_MYSQL_PASSWORD']
     dbhost = 'localhost' unless dbhost
-    sh "mysql -ucarnation -paFx4mMHb3z7d6dy carnationdb  -h #{dbhost} <db/droptables.sql"
+    sh "mysql -ucarnation -p#{dbpasswd} carnationdb  -h #{dbhost} <db/droptables.sql"
   end
 
   desc 'migrate to the latest state'
   task :migrate do
     dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbpasswd = ENV['CARNATION_MYSQL_PASSWORD']
     dbhost = 'localhost' unless dbhost
-    sh "bundle exec sequel -m migrate \"mysql2://carnation:aFx4mMHb3z7d6dy@#{dbhost}/carnationdb\" -E "
+    sh "bundle exec sequel -m migrate \"mysql2://carnation:#{dbpasswd}@#{dbhost}/carnationdb\" -E "
+  end
+
+  desc 'revert to the previous state'
+  task :revert_migrate do
+    dbhost = ENV['CARNATION_MYSQL_HOST']
+    dbpasswd = ENV['CARNATION_MYSQL_PASSWORD']
+    dbhost = 'localhost' unless dbhost
+    sh "bundle exec sequel -m migrate -M 10 \"mysql2://carnation:#{dbpasswd}@#{dbhost}/carnationdb\" -E "
   end
 
   desc 'create built-in accounts'

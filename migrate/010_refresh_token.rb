@@ -5,7 +5,7 @@ Sequel.migration do
   end
 
   down do
-    drop_column :accesstokens, :refresh_token
     drop_index  :accesstokens, :refresh_token
+    drop_column :accesstokens, :refresh_token
   end
 end
