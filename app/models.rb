@@ -759,6 +759,20 @@ end
 
 class AccessToken < Sequel::Model(:accesstokens)
 
+  def self.create_new_token(viewer_or_user)
+    access_token = nil
+    while not access_token
+      access_token = AccessToken.new(viewer_or_user)
+      begin
+        access_token.save()
+      rescue
+        CarnationConfig.logger.info "AccessToken create error(might be token collision)"
+        access_token = nil
+      end
+    end
+    return access_token
+  end
+
   def initialize(viewer_or_user)
     super()
     self.token = SecureRandom.hex 
@@ -775,21 +789,45 @@ class AccessToken < Sequel::Model(:accesstokens)
     self.expires_at = now + 1 * (3600 * 24)  # 1 days for now
   end
 
+
   def refresh
     user = User.find(:id=>self.user_id)
     self.destroy
-    access_token = AccessToken.new(user).save
+    access_token = AccessToken.create_new_token(user).save
   end
 
   def generate_bearer_token
+    now = Time.now.to_i
     bearer_token = Rack::OAuth2::AccessToken::Bearer.new(
       :access_token => self.token,
       :refresh_token => self.refresh_token,
       :user_id => self.user_id,
       :viewer_id => self.viewer_id,
       :scope => self.scope,
-      :expires_in => self.expires_at - self.created_at
+      :expires_in => self.expires_at - now
     )
+  end
+
+  def self.cleanup_expired_tokens()
+    CarnationConfig.logger.info "cleanup expired tokens"
+    #
+    # delete expired viewer token
+    #
+    now = Time.now.to_i
+    ds = AccessToken.where('viewer_id IS NOT NULL')
+                    .where('expires_at < ?', now)
+    CarnationConfig.logger.info "expired viewer token count=#{ds.all.length}"
+    ds.delete()
+
+    #
+    # delete old user token (90 days old)
+    #
+    # we won't delete expired user tokens as these could be refreshed
+    #
+    ds = AccessToken.where('user_id IS NOT NULL')
+                    .where('created_at < ?', now - (3600*24*90))
+    CarnationConfig.logger.info "expired user token count=#{ds.all.length}"
+    ds.delete()
   end
 end
 
