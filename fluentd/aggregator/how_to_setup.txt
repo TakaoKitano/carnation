@@ -1,0 +1,52 @@
+1) edit /etc/yum.repos.d/td.repo
+
+[treasuredata]
+name=TreasureData
+baseurl=http://packages.treasure-data.com/redhat/$basearch
+
+2) install td-agent
+
+$ sudo yum install td-agent -y --nogpgcheck
+$ sudo service td-agent start
+$ sudo chkconfig td-agent on
+
+3) install elasticsearch
+
+$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.2.noarch.rpm
+$ rpm -ivh elasticsearch-1.4.2.noarch.rpm
+
+4) edit /etc/elasticsearch/elasticsearch.yml do allow CORS
+
+http.cors.allow-origin: "/.*/"
+http.cors.enabled: true
+
+$ restart elasticsearch
+
+
+5) install kibana
+
+$ wget http://download.elasticsearch.org/kibana/kibana/kibana-latest.tar.gz
+$ tar xvfz kibana-latest.tar.gz
+$ mv kibana-latest /home/ec2-user/workspace/kibana
+
+6) edit nginx conf /etc/nginx/conf.d/default.conf
+
+server {
+    listen 80;
+    server_name payment.mago-ch.com;
+
+    location /static {
+        root    /home/ec2-user/workspace/magoch_payment/www/templates;
+    }
+
+    location /kibana {
+        root    /home/ec2-user/workspace;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+    }
+}
+
+restart nginx
+
