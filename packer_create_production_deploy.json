@@ -29,9 +29,12 @@
       "inline": [
         "docker pull chikaku/carnation",
         "cp /home/core/production.env /home/core/carnation.env",
+        "cp /home/core/conf/fluentd.production.conf /home/core/conf/fluentd.conf",
         "sudo systemctl enable /home/core/carnation.service",
+        "sudo systemctl enable /home/core/fluentd.service",
         "sudo systemctl daemon-reload",
         "sudo systemctl start carnation.service"
+        "sudo systemctl start fluentd.service"
       ]
     }
   ]

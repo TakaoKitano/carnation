@@ -7,12 +7,17 @@ sudo systemctl enable /home/core/carnation.service
 sudo systemctl daemon-reload
 sudo systemctl stop carnation.service
 sudo systemctl start carnation.service
-#echo retrieving docker image google/cadvisor for memory trace - this may take long time
-#docker pull google/cadvisor >/dev/null
-#docker images | grep cadvisor
-#sudo systemctl enable /home/core/cadvisor.service
-#sudo systemctl stop cadvisor.service
-#sudo systemctl start cadvisor.service
+
+echo retrieving fluentd image chikaku/fluentd - this may take for a while
+docker pull chikaku/fluentd >/dev/null
+docker images | grep fluentd
+echo configure systemd services for fluentd
+sudo systemctl enable /home/core/fluentd.service
+sudo systemctl daemon-reload
+sudo systemctl stop fluentd.service
+sudo systemctl start fluentd.service
+
 sleep 5
 docker ps
 docker inspect carnation
+docker inspect fluentd

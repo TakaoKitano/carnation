@@ -1,0 +1,16 @@
+[Unit]
+Description=fluentd
+After=docker.service
+Requires=docker.service
+
+[Service]
+WorkingDirectory=/home/core
+Type=oneshot
+RemainAfterExit=yes 
+TimeoutStartSec=0
+ExecStart=/bin/bash -c "./run_fluentd.sh"
+ExecStop=/usr/bin/docker stop fluentd
+ExecStopPost=/usr/bin/docker rm fluentd
+
+[Install]
+WantedBy=multi-user.target
