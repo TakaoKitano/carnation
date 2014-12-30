@@ -4,24 +4,32 @@
 name=TreasureData
 baseurl=http://packages.treasure-data.com/redhat/$basearch
 
-2) install td-agent
-
-$ sudo yum install td-agent -y --nogpgcheck
-$ sudo service td-agent start
-$ sudo chkconfig td-agent on
-
-3) install elasticsearch
+2) install elasticsearch
 
 $ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.2.noarch.rpm
 $ rpm -ivh elasticsearch-1.4.2.noarch.rpm
 
-4) edit /etc/elasticsearch/elasticsearch.yml do allow CORS
+3) edit /etc/elasticsearch/elasticsearch.yml do allow CORS
 
 http.cors.allow-origin: "/.*/"
 http.cors.enabled: true
 
 $ restart elasticsearch
 
+4) install td-agent
+
+$ sudo yum install td-agent -y --nogpgcheck
+
+$ sudo yum install gcc-c++ libcurl-devel
+$ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-filter
+$ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-forest
+$ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-config-expander
+$ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-elasticsearch
+$ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-typecast
+$ sudo /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-parser
+
+$ sudo service td-agent start
+$ sudo chkconfig td-agent on
 
 5) install kibana
 
