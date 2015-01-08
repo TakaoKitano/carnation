@@ -1,5 +1,5 @@
 #!/bin/bash
-echo retrieving docker image chikaku/carnation - this may take long time
+echo retrieving docker image chikaku/carnation - this may take for a while
 docker pull chikaku/carnation >/dev/null
 docker images | grep chikaku
 echo configure systemd services for carnation
