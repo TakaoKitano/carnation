@@ -31,7 +31,6 @@ scp -r conf/ core@${address}:
 echo "copying env file..."
 scp envfiles/${env_name}.env core@${address}:carnation.env
 
-
 echo "configure services on the target machine..."
 ssh core@${address} "cp conf/fluentd.${env_name}.conf conf/fluentd.conf"
 ssh core@${address} "./config_service.sh"
