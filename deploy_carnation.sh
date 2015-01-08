@@ -21,8 +21,8 @@ else
   echo "unknown option"
   exit
 fi
-scp -i doc/magoaws.pem scripts/*  core@${address}:
-scp -i doc/magoaws.pem -r conf core@${address}:
-ssh -i doc/magoaws.pem core@${address} "cp ${env_name}.env carnation.env"
-ssh -i doc/magoaws.pem core@${address} "cp conf/fluentd.${env_name}.conf conf/fluentd.conf"
-ssh -i doc/magoaws.pem core@${address} "./config_service.sh"
+scp scripts/*  core@${address}:
+scp -r conf core@${address}:
+ssh core@${address} "cp ${env_name}.env carnation.env"
+ssh core@${address} "cp conf/fluentd.${env_name}.conf conf/fluentd.conf"
+ssh core@${address} "./config_service.sh"
