@@ -25,10 +25,14 @@
       "destination": "/home/core"
     },
     {
+      "type": "file",
+      "source": "envfiles/test.env",
+      "destination": "/home/core/carnation.env"
+    },
+    {
       "type": "shell",
       "inline": [
         "docker pull chikaku/carnation",
-        "cp /home/core/test.env /home/core/carnation.env",
         "cp /home/core/conf/fluentd.test.conf /home/core/conf/fluentd.conf",
         "sudo systemctl enable /home/core/carnation.service",
         "sudo systemctl enable /home/core/fluentd.service",
