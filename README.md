@@ -50,10 +50,13 @@ sudo apt-get install -y libmysqlclient-dev mysql-client
 $ git clone git@github.com:kajiwara321/magoch_server.git
 </pre>
 
-### carnation env
-<pre>
-$ cp *.env magoch_server/envfiles (you need to get *.env files from chikaku staff)
-</pre>
+### carnation env and certificates (you need to get those files from chikaku)
+
+- install envfile/test.env
+- install envfile/production.env
+- install conf/mago-ch.com.crt
+- install conf/mago-ch.key
+- install conf/htpasswd.webtest
 
 ### ruby2.1
 
