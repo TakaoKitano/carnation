@@ -37,7 +37,7 @@
         "sudo systemctl enable /home/core/carnation.service",
         "sudo systemctl enable /home/core/fluentd.service",
         "sudo systemctl daemon-reload",
-        "sudo systemctl start carnation.service"
+        "sudo systemctl start carnation.service",
         "sudo systemctl start fluentd.service"
       ]
     }

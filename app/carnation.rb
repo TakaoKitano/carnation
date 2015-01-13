@@ -44,11 +44,14 @@ class Carnation < Sinatra::Base
       return nil
     end
 
-    def file_hash_item_count(file_hash, user_id)
-        ds = Item.where('status = 0 OR status = 1')
-        ds = ds.where(:file_hash=>file_hash)
-        ds = ds.where("id != #{user_id}")
-        return ds.count
+    def check_file_hash_conflict(file_hash, user_id)
+      ds = Item.where('status = 0 OR status = 1')
+      ds = ds.where(:file_hash => file_hash)
+      ds = ds.where(:user_id => user_id)
+      if ds.count > 0
+        return true 
+      end
+      return false
     end
 
     def s3_url(path, method_symbol)
@@ -245,12 +248,6 @@ class Carnation < Sinatra::Base
     timezone = get_non_zero_length_parameter(:timezone)
     shot_at = get_non_zero_length_parameter(:shot_at)
 
-    file_hash = get_non_zero_length_parameter(:file_hash)
-    @logger.info "file_hash=#{file_hash}"
-    if file_hash
-      halt(400, "file_hash conflict") if file_hash_item_count(file_hash, owner.id) > 0
-    end
-
     if item_id > 0 
       item = Item.find(:id=>item_id)
       halt(400, "item_id invalid") unless item
@@ -259,27 +256,29 @@ class Carnation < Sinatra::Base
     else 
       halt(400, "extension required") unless extension
       halt(400, "extension invalid") unless extension.index('.') == 0
+      file_hash = get_non_zero_length_parameter(:file_hash)
+      if file_hash
+        @logger.info "file_hash=#{file_hash}"
+        halt(400, "file_hash conflict") if check_file_hash_conflict(file_hash, owner.id)
+      end
       item = Item.create(:user_id=>owner.id, :extension=>extension)
     end
-    begin
-      item.status = Item::STATUS[:initiated]
-      item.title = params[:title]
-      item.description = params[:description]
-      item.file_info = params[:file_info]
-      item.shot_at = shot_at.to_i if shot_at
-      if timezone
-        item.timezone = timezone.to_i
-      else
-        item.timezone = owner.timezone
-      end
 
-      if file_hash
-        item.file_hash = file_hash
-      end
-      item.save()
-    rescue
-      halt(400, "file_hash may conflict")
+    item.status = Item::STATUS[:initiated]
+    item.title = params[:title]
+    item.description = params[:description]
+    item.file_info = params[:file_info]
+    item.shot_at = shot_at.to_i if shot_at
+    if timezone
+      item.timezone = timezone.to_i
+    else
+      item.timezone = owner.timezone
     end
+
+    if file_hash
+      item.file_hash = file_hash
+    end
+    item.save()
 
     @result[:item_id] = item.id
     @result[:status] = item.status
@@ -300,41 +299,25 @@ class Carnation < Sinatra::Base
 
     item_id = params[:item_id].to_i
     extension = get_non_zero_length_parameter(:extension) 
-    file_hash = get_non_zero_length_parameter(:file_hash)
-    if file_hash
-      halt(400, "file_hash conflict") if file_hash_item_count(file_hash, owner.id) > 0
-    end
 
     if item_id > 0 
       item = Item.find(:id=>item_id)
       halt(400, "item_id invalid") unless item
       halt(400, "access denied") unless owner.id == item.user_id
       halt(400, "access denied") unless user.can_write_to_item_of(owner)
-      begin
-        item.status = Item::STATUS[:initiated]
-        if file_hash
-          item.file_hash = file_hash
-        end
-        item.timezone = owner.timezone
-        item.save()
-      rescue
-        halt(400, "file_hash conflict") 
-      end
-    else 
+    else
       halt(400, "extension required") unless extension
       halt(400, "extension invalid") if extension.index('.') != 0
-
-      begin
-        item = Item.create(:user_id=>owner.id, :extension=>extension) do |item|
-          item.status = Item::STATUS[:initiated]
-          if file_hash
-            item.file_hash = file_hash
-          end
-        end
-      rescue
-        halt(400, "file_hash conflict") 
+      file_hash = get_non_zero_length_parameter(:file_hash)
+      if file_hash
+        halt(400, "file_hash conflict") if check_file_hash_conflict(file_hash, owner.id)
       end
+      item = Item.create(:user_id=>owner.id, :extension=>extension)
     end
+
+    item.status = Item::STATUS[:initiated]
+    item.timezone = owner.timezone
+    item.save()
 
     form = CarnationConfig.s3bucket.presigned_post(:key => item.path+item.extension)
     require 'erb'
@@ -441,15 +424,6 @@ class Carnation < Sinatra::Base
     valid_after = params["valid_after"].to_i
     valid_after = 0 if valid_after <= 0
 
-    file_hash = get_non_zero_length_parameter(:file_hash)
-    if file_hash
-      halt(400, "file_hash conflict") if file_hash_item_count(file_hash, item.user_id) > 0
-      #
-      # override the file_hash that was set on initiate
-      #
-      item.file_hash = file_hash
-      @logger.info "item.file_hash replaced with the new value"
-    end
     item.valid_after = Time.at(Time.now.to_i + valid_after).to_i
     item.save()
 
